@@ -124,14 +124,17 @@ export default function ChatLayout() {
   
     setIsSending(true);
     const userMessage: Message = { id: Date.now().toString(), text, sender: 'user', image };
-    const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
     
+    // Check if it's the first message and generate title
+    const isFirstMessage = activeSession.messages.length === 0;
+
+    const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
     const updatedMessages = [...activeSession.messages, userMessage];
     updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
     setCredits(prev => prev - 1);
   
     try {
-      if (activeSession.messages.length === 0) {
+      if (isFirstMessage) {
         generateChatTitle({ firstUserMessage: text }).then(({ title }) => {
           updateSession(activeSession.id, { title });
         });
@@ -154,7 +157,9 @@ export default function ChatLayout() {
       
       setSessions(prev => prev.map(s => {
         if (s.id === activeSession.id) {
-          return { ...s, messages: [...updatedMessages, aiMessage] };
+          // Make sure to not lose the potentially updated title
+          const currentSession = prev.find(p => p.id === activeSession.id);
+          return { ...currentSession!, messages: [...updatedMessages, aiMessage] };
         }
         return s;
       }));
