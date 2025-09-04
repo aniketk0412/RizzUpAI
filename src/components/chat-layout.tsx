@@ -302,61 +302,58 @@ export default function ChatLayout() {
           </div>
         </SidebarFooter>
       </Sidebar>
-
-      <div className="flex flex-col h-screen flex-1">
-        <SidebarOverlay />
-        <SidebarInset>
-          <header className="flex items-center justify-between p-2 border-b">
+      <SidebarOverlay />
+      <SidebarInset>
+        <header className="flex items-center justify-between p-2 border-b">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <h2 className="font-headline text-xl">ChatAI</h2>
+          </div>
+          <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <h2 className="font-headline text-xl">ChatAI</h2>
+              <span className="text-sm font-medium">Relation:</span>
+              <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
+                <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
+                <SelectContent>
+                  {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Relation:</span>
-                <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
-                  <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
-                  <SelectContent>
-                    {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Tone:</span>
-                <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
-                  <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
-                  <SelectContent>
-                    {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
-                <Coins className="mr-2" /> {credits} Credits
-              </Button>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun /> : <Moon />}
-              </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Tone:</span>
+              <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
+                <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
+                <SelectContent>
+                  {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          </header>
-          
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeSession ? (
-              <>
-                {activeSession.messages.map(message => <ChatMessage key={message.id} message={message} />)}
-                 <div ref={messagesEndRef} />
-              </>
-            ) : (
-               <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Bot size={64} className="text-muted-foreground" />
-                  <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
-                  <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
-                </div>
-            )}
-          </main>
-          
-          {activeSession && <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />}
-        </SidebarInset>
-      </div>
+            <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
+              <Coins className="mr-2" /> {credits} Credits
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun /> : <Moon />}
+            </Button>
+          </div>
+        </header>
+        
+        <main className="flex-1 overflow-y-auto p-4 space-y-4">
+          {activeSession ? (
+            <>
+              {activeSession.messages.map(message => <ChatMessage key={message.id} message={message} />)}
+               <div ref={messagesEndRef} />
+            </>
+          ) : (
+             <div className="flex flex-col items-center justify-center h-full text-center">
+                <Bot size={64} className="text-muted-foreground" />
+                <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
+                <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
+              </div>
+          )}
+        </main>
+        
+        {activeSession && <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />}
+      </SidebarInset>
 
       <CreditDialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen} credits={credits} resetTimestamp={resetTimestamp} />
 
@@ -378,5 +375,3 @@ export default function ChatLayout() {
     </SidebarProvider>
   );
 }
-
-    
