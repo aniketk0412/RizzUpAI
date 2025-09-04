@@ -82,12 +82,20 @@ export default function ChatLayout() {
   }, [activeSession?.messages]);
 
   useEffect(() => {
-    if (credits === 0 && !resetTimestamp) {
-      setResetTimestamp(new Date().getTime() + 24 * 60 * 60 * 1000);
-    } else if (credits > 0 && resetTimestamp) {
-      setResetTimestamp(null);
-    }
-  }, [credits, resetTimestamp, setResetTimestamp]);
+    const checkCreditReset = () => {
+      if (credits === 0 && !resetTimestamp) {
+        setResetTimestamp(new Date().getTime() + 24 * 60 * 60 * 1000);
+      } else if (credits > 0 && resetTimestamp) {
+        setResetTimestamp(null);
+      } else if (resetTimestamp && new Date().getTime() > resetTimestamp) {
+        setCredits(15);
+        setResetTimestamp(null);
+      }
+    };
+    checkCreditReset();
+    const interval = setInterval(checkCreditReset, 1000 * 60);
+    return () => clearInterval(interval);
+  }, [credits, resetTimestamp, setCredits, setResetTimestamp]);
   
   const handleNewChat = () => {
     const newSession: ChatSession = {
@@ -113,25 +121,26 @@ export default function ChatLayout() {
       setIsCreditDialogOpen(true);
       return;
     }
-
+  
     setIsSending(true);
     const userMessage: Message = { id: Date.now().toString(), text, sender: 'user', image };
     const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
     
-    updateSession(activeSession.id, { messages: [...activeSession.messages, userMessage, loadingMessage] });
+    const updatedMessages = [...activeSession.messages, userMessage];
+    updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
     setCredits(prev => prev - 1);
-
+  
     try {
-      if(activeSession.messages.length === 0) {
-        generateChatTitle({ firstUserMessage: text }).then(({title}) => {
+      if (activeSession.messages.length === 0) {
+        generateChatTitle({ firstUserMessage: text }).then(({ title }) => {
           updateSession(activeSession.id, { title });
-        })
+        });
       }
-
+  
       const response = await maintainSessionMemory({
         relation: activeSession.relation,
         tone: activeSession.tone,
-        history: activeSession.messages,
+        history: updatedMessages,
         currentMessage: text,
         ...(image && { image: image }),
       });
@@ -139,16 +148,15 @@ export default function ChatLayout() {
       const aiMessage: Message = { id: Date.now().toString(), text: response.response, sender: 'ai' };
       
       setSessions(prev => prev.map(s => {
-        if(s.id === activeSession.id) {
-          const messages = s.messages.filter(m => !m.isProcessing);
-          return {...s, messages: [...messages, aiMessage] };
+        if (s.id === activeSession.id) {
+          return { ...s, messages: [...updatedMessages, aiMessage] };
         }
         return s;
       }));
     } catch (error) {
       console.error(error);
       toast({ title: 'Error', description: 'Failed to get response from AI.', variant: 'destructive' });
-      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: s.messages.filter(m => !m.isProcessing) } : s));
+      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: updatedMessages } : s));
     } finally {
       setIsSending(false);
     }
@@ -233,7 +241,7 @@ export default function ChatLayout() {
         <SidebarFooter>
            <div className="flex items-center gap-2 p-2 group-data-[collapsible=icon]:hidden">
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground">N</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground">U</AvatarFallback>
             </Avatar>
             <p className="font-semibold">User</p>
           </div>
@@ -244,7 +252,7 @@ export default function ChatLayout() {
         <header className="flex items-center justify-between p-2 border-b">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
-            <h2 className="font-headline text-xl">ToneTalk</h2>
+            <h2 className="font-headline text-xl">Rizzly</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -283,7 +291,7 @@ export default function ChatLayout() {
           ) : (
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Bot size={64} className="text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-headline">Welcome to ToneTalk</h2>
+                <h2 className="mt-4 text-2xl font-headline">Welcome to Rizzly</h2>
                 <p className="mt-2 text-muted-foreground">Start a new chat from the sidebar to begin.</p>
               </div>
           )}
