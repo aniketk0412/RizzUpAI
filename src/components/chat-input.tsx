@@ -88,7 +88,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
         >
           <Mic />
         </Button>
-        <div className={cn("relative flex-1 rounded-lg border bg-card shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
+        <div className={cn("relative flex-1 rounded-2xl border bg-card shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
           {image && (
             <div className="relative p-2">
               <Image src={image.preview} alt="Preview" width={80} height={80} className="rounded-md" data-ai-hint="image preview" />
@@ -109,7 +109,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full resize-none border-0 bg-transparent pr-12 py-2 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full resize-none border-0 bg-transparent pr-12 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-0"
             disabled={isSending}
           />
 
