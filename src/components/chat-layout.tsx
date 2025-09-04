@@ -215,7 +215,7 @@ export default function ChatLayout() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <div className="flex h-screen">
         <Sidebar collapsible="offcanvas">
           <SidebarHeader>
