@@ -68,7 +68,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
   return (
     <div className="p-4 bg-background border-t">
-      <div className={cn("relative rounded-lg border bg-card p-2 shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
+      <div className={cn("relative rounded-lg border bg-card p-1 shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
         {image && (
           <div className="relative p-2">
             <Image src={image.preview} alt="Preview" width={80} height={80} className="rounded-md" data-ai-hint="image preview" />
@@ -83,7 +83,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
           </div>
         )}
         <div className="relative flex items-center">
-          <div className="absolute left-2 bottom-2 flex items-center gap-1">
+          <div className="absolute left-1 bottom-1 flex items-center gap-1">
             <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isSending}>
               <Paperclip />
             </Button>
@@ -111,11 +111,11 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 resize-none border-0 bg-transparent px-20 py-2 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="flex-1 resize-none border-0 bg-transparent px-16 py-2 focus-visible:ring-0 focus-visible:ring-offset-0"
             disabled={isSending}
           />
 
-          <div className="absolute right-2 bottom-2">
+          <div className="absolute right-1 bottom-1">
             <Button size="icon" onClick={handleSend} disabled={isSending || (!text.trim() && !image)} className="bg-primary text-primary-foreground rounded-full">
               <SendHorizontal />
             </Button>
