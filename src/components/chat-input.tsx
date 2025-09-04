@@ -74,19 +74,8 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             </Button>
           </div>
         )}
-        <div className="relative flex items-end">
-          <Textarea
-            ref={textareaRef}
-            rows={1}
-            placeholder="Type your message..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 resize-none border-0 bg-transparent px-12 py-2 focus-visible:ring-0 focus-visible:ring-offset-0"
-            disabled={isSending}
-          />
-
-          <div className="absolute left-2 bottom-1.5 flex items-center gap-1">
+        <div className="relative flex items-center">
+          <div className="absolute left-2 bottom-2 flex items-center gap-1">
             <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isSending}>
               <Paperclip />
             </Button>
@@ -107,9 +96,19 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
               <Mic />
             </Button>
           </div>
+          <Textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder="Type your message..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="flex-1 resize-none border-0 bg-transparent px-20 py-2 focus-visible:ring-0 focus-visible:ring-offset-0"
+            disabled={isSending}
+          />
 
-          <div className="absolute right-2 bottom-1.5">
-            <Button size="icon" onClick={handleSend} disabled={isSending || (!text.trim() && !image)}>
+          <div className="absolute right-2 bottom-2">
+            <Button size="icon" onClick={handleSend} disabled={isSending || (!text.trim() && !image)} className="bg-primary text-primary-foreground rounded-full">
               <SendHorizontal />
             </Button>
           </div>

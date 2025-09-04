@@ -17,7 +17,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div className={cn('flex items-start gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <Avatar className="h-8 w-8">
+        <Avatar className="h-8 w-8 bg-muted border border-border">
           <AvatarFallback>
             <Bot />
           </AvatarFallback>
@@ -26,7 +26,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       <div
         className={cn(
           'max-w-md rounded-lg p-3 space-y-2',
-          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
+          isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
         )}
       >
         {message.image && (

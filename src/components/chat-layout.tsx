@@ -45,9 +45,10 @@ import type { ChatSession, Message, Relation, Tone } from '@/types';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
 import CreditDialog from './credit-dialog';
-import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon } from 'lucide-react';
 import { maintainSessionMemory } from '@/ai/flows/maintain-session-memory';
 import { generateChatTitle } from '@/ai/flows/generate-chat-title';
+import { Avatar, AvatarFallback } from './ui/avatar';
 
 const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
 const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
@@ -86,7 +87,7 @@ export default function ChatLayout() {
     } else if (credits > 0 && resetTimestamp) {
       setResetTimestamp(null);
     }
-  }, [credits, resetTimestamp]);
+  }, [credits, resetTimestamp, setResetTimestamp]);
   
   const handleNewChat = () => {
     const newSession: ChatSession = {
@@ -172,27 +173,25 @@ export default function ChatLayout() {
     <SidebarProvider>
       <Sidebar variant="sidebar" collapsible="icon">
         <SidebarHeader>
-          <h2 className="font-headline text-2xl group-data-[collapsible=icon]:hidden">RizzUp AI</h2>
+           <Button variant="outline" className="w-full border-dashed" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
-              <Button className="w-full" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center gap-2"><Search /> <span className="group-data-[collapsible=icon]:hidden">Search</span></SidebarGroupLabel>
-            <SidebarGroupContent>
-              <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="group-data-[collapsible=icon]:hidden"/>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent"/>
+              </div>
             </SidebarGroupContent>
           </SidebarGroup>
           <SidebarMenu>
             {filteredSessions.map(session => (
-              <SidebarMenuItem key={session.id}>
+              <SidebarMenuItem key={session.id} className="mx-2">
                 <SidebarMenuButton
                   isActive={session.id === activeSessionId}
                   onClick={() => setActiveSessionId(session.id)}
                   tooltip={{ children: session.title, side: 'right' }}
+                  className="data-[active=true]:bg-accent"
                 >
                   <span className="truncate">{session.title}</span>
                 </SidebarMenuButton>
@@ -232,28 +231,45 @@ export default function ChatLayout() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          {/* Footer content if any */}
+           <div className="flex items-center gap-2 p-2 group-data-[collapsible=icon]:hidden">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-primary text-primary-foreground">N</AvatarFallback>
+            </Avatar>
+            <p className="font-semibold">User</p>
+          </div>
         </SidebarFooter>
       </Sidebar>
 
       <SidebarInset className="flex flex-col h-screen">
         <header className="flex items-center justify-between p-2 border-b">
-          <SidebarTrigger />
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <h2 className="font-headline text-xl">ToneTalk</h2>
+          </div>
           <div className="flex items-center gap-4">
-            <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
-              <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
-              <SelectContent>
-                {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
-              <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
-              <SelectContent>
-                {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Relation:</span>
+              <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
+                <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
+                <SelectContent>
+                  {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Tone:</span>
+              <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
+                <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
+                <SelectContent>
+                  {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
               <Coins className="mr-2" /> {credits} Credits
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Moon />
             </Button>
           </div>
         </header>
@@ -267,7 +283,7 @@ export default function ChatLayout() {
           ) : (
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Bot size={64} className="text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-headline">Welcome to RizzUp AI</h2>
+                <h2 className="mt-4 text-2xl font-headline">Welcome to ToneTalk</h2>
                 <p className="mt-2 text-muted-foreground">Start a new chat from the sidebar to begin.</p>
               </div>
           )}
