@@ -216,139 +216,141 @@ export default function ChatLayout() {
 
   return (
     <SidebarProvider>
-      <Sidebar variant="sidebar" collapsible="offcanvas">
-        <SidebarHeader>
-           <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent rounded-lg"/>
-              </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-          <SidebarMenu>
-            {filteredSessions.map(session => (
-              <SidebarMenuItem key={session.id} className="mx-2">
-                <SidebarMenuButton
-                  isActive={session.id === activeSessionId}
-                  onClick={() => setActiveSessionId(session.id)}
-                  tooltip={{ children: session.title, side: 'right' }}
-                  className="data-[active=true]:bg-sidebar-accent rounded-lg"
-                >
-                  <span className="truncate">{session.title}</span>
-                </SidebarMenuButton>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuAction showOnHover>
-                      <MoreHorizontal />
-                    </SidebarMenuAction>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right">
-                    <DropdownMenuItem onClick={() => { setNewTitle(session.title); setRenameDialog({ open: true, session }); }}>
-                      <Edit className="mr-2 h-4 w-4" /> Rename
-                    </DropdownMenuItem>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                          <Trash2 className="mr-2 h-4 w-4 text-destructive" /> <span className="text-destructive">Delete</span>
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the chat "{session.title}".
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(session.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-           <div className="flex flex-col gap-2 p-2 group-data-[collapsible=icon]:hidden">
-            {user ? (
-              <div className="flex items-center gap-2 p-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user.email?.[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <p className="font-semibold truncate">{user.email}</p>
-                <Button variant="ghost" size="icon" onClick={logout} className="ml-auto">
-                  <LogOut />
+      <div className="flex h-screen">
+        <Sidebar variant="sidebar" collapsible="offcanvas">
+          <SidebarHeader>
+             <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent rounded-lg"/>
+                </div>
+              </SidebarGroupContent>
+            </SidebarGroup>
+            <SidebarMenu>
+              {filteredSessions.map(session => (
+                <SidebarMenuItem key={session.id} className="mx-2">
+                  <SidebarMenuButton
+                    isActive={session.id === activeSessionId}
+                    onClick={() => setActiveSessionId(session.id)}
+                    tooltip={{ children: session.title, side: 'right' }}
+                    className="data-[active=true]:bg-sidebar-accent rounded-lg"
+                  >
+                    <span className="truncate">{session.title}</span>
+                  </SidebarMenuButton>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuAction showOnHover>
+                        <MoreHorizontal />
+                      </SidebarMenuAction>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right">
+                      <DropdownMenuItem onClick={() => { setNewTitle(session.title); setRenameDialog({ open: true, session }); }}>
+                        <Edit className="mr-2 h-4 w-4" /> Rename
+                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                            <Trash2 className="mr-2 h-4 w-4 text-destructive" /> <span className="text-destructive">Delete</span>
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the chat "{session.title}".
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDelete(session.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+             <div className="flex flex-col gap-2 p-2 group-data-[collapsible=icon]:hidden">
+              {user ? (
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {user.email?.[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <p className="font-semibold truncate">{user.email}</p>
+                  <Button variant="ghost" size="icon" onClick={logout} className="ml-auto">
+                    <LogOut />
+                  </Button>
+                </div>
+              ) : (
+                 <Button onClick={() => router.push('/login')}>
+                  <LogIn className="mr-2" /> Login
                 </Button>
-              </div>
-            ) : (
-               <Button onClick={() => router.push('/login')}>
-                <LogIn className="mr-2" /> Login
-              </Button>
-            )}
-          </div>
-        </SidebarFooter>
-      </Sidebar>
+              )}
+            </div>
+          </SidebarFooter>
+        </Sidebar>
 
-      <SidebarInset className="flex flex-col h-screen">
-        <header className="flex items-center justify-between p-2 border-b">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger />
-            <h2 className="font-headline text-xl">ChatAI</h2>
-          </div>
-          <div className="flex items-center gap-4">
+        <SidebarInset className="flex flex-col h-screen">
+          <header className="flex items-center justify-between p-2 border-b">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Relation:</span>
-              <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
-                <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
-                <SelectContent>
-                  {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SidebarTrigger />
+              <h2 className="font-headline text-xl">ChatAI</h2>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Tone:</span>
-              <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
-                <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
-                <SelectContent>
-                  {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
-              <Coins className="mr-2" /> {credits} Credits
-            </Button>
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              {theme === 'dark' ? <Sun /> : <Moon />}
-            </Button>
-          </div>
-        </header>
-        
-        <main className="flex-1 overflow-y-auto p-4 space-y-4">
-          {activeSession ? (
-            <>
-              {activeSession.messages.map(message => <ChatMessage key={message.id} message={message} />)}
-               <div ref={messagesEndRef} />
-            </>
-          ) : (
-             <div className="flex flex-col items-center justify-center h-full text-center">
-                <Bot size={64} className="text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
-                <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Relation:</span>
+                <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
+                  <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
+                  <SelectContent>
+                    {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-          )}
-        </main>
-        
-        {activeSession && <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />}
-      </SidebarInset>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Tone:</span>
+                <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
+                  <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
+                  <SelectContent>
+                    {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
+                <Coins className="mr-2" /> {credits} Credits
+              </Button>
+              <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                {theme === 'dark' ? <Sun /> : <Moon />}
+              </Button>
+            </div>
+          </header>
+          
+          <main className="flex-1 overflow-y-auto p-4 space-y-4">
+            {activeSession ? (
+              <>
+                {activeSession.messages.map(message => <ChatMessage key={message.id} message={message} />)}
+                 <div ref={messagesEndRef} />
+              </>
+            ) : (
+               <div className="flex flex-col items-center justify-center h-full text-center">
+                  <Bot size={64} className="text-muted-foreground" />
+                  <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
+                  <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
+                </div>
+            )}
+          </main>
+          
+          {activeSession && <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />}
+        </SidebarInset>
+      </div>
 
       <CreditDialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen} credits={credits} resetTimestamp={resetTimestamp} />
 
