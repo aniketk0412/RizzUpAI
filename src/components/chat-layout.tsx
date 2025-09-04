@@ -45,10 +45,11 @@ import type { ChatSession, Message, Relation, Tone } from '@/types';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
 import CreditDialog from './credit-dialog';
-import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon, Sun } from 'lucide-react';
 import { maintainSessionMemory } from '@/ai/flows/maintain-session-memory';
 import { generateChatTitle } from '@/ai/flows/generate-chat-title';
 import { Avatar, AvatarFallback } from './ui/avatar';
+import { useTheme } from '@/hooks/use-theme';
 
 const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
 const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
@@ -64,6 +65,8 @@ export default function ChatLayout() {
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; session: ChatSession | null }>({ open: false, session: null });
   const [newTitle, setNewTitle] = useState('');
+  
+  const { theme, toggleTheme } = useTheme();
 
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -294,8 +297,8 @@ export default function ChatLayout() {
             <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
               <Coins className="mr-2" /> {credits} Credits
             </Button>
-            <Button variant="ghost" size="icon">
-              <Moon />
+            <Button variant="ghost" size="icon" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun /> : <Moon />}
             </Button>
           </div>
         </header>
@@ -338,5 +341,3 @@ export default function ChatLayout() {
     </SidebarProvider>
   );
 }
-
-    
