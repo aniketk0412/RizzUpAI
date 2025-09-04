@@ -260,6 +260,27 @@ const Sidebar = React.forwardRef<
 )
 Sidebar.displayName = "Sidebar"
 
+const SidebarOverlay = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const { open, setOpen, isMobile } = useSidebar()
+  if (isMobile) return null;
+  return (
+    <div
+      ref={ref}
+      {...props}
+      className={cn(
+        "fixed inset-0 z-0 bg-black/50 transition-opacity duration-200",
+        open ? "opacity-100" : "opacity-0 pointer-events-none",
+        className
+      )}
+      onClick={() => setOpen(false)}
+    />
+  )
+})
+SidebarOverlay.displayName = "SidebarOverlay"
+
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
@@ -760,5 +781,8 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarOverlay,
   useSidebar,
 }
+
+    
