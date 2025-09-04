@@ -109,16 +109,13 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full resize-none border-0 bg-transparent pr-12 py-2 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-0"
+            className="w-full resize-none border-0 bg-transparent py-2 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-0 pr-4"
             disabled={isSending}
           />
-
-          <div className="absolute right-1 bottom-1">
-            <Button size="icon" onClick={handleSend} disabled={isSending || (!text.trim() && !image)} className="bg-primary text-primary-foreground rounded-full">
-              <SendHorizontal />
-            </Button>
-          </div>
         </div>
+         <Button size="icon" onClick={handleSend} disabled={isSending || (!text.trim() && !image)} className="bg-primary text-primary-foreground rounded-full shrink-0">
+          <SendHorizontal />
+        </Button>
       </div>
     </div>
   );
