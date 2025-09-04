@@ -69,26 +69,26 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
   return (
     <div className="p-4 bg-background border-t">
       <div className="flex items-end gap-2">
-        <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isSending}>
-          <Paperclip />
-        </Button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageChange}
-          className="hidden"
-          accept="image/*"
-        />
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={toggleListening}
-          className={cn(isListening ? 'text-primary' : '', 'transition-colors')}
-          disabled={isSending}
-        >
-          <Mic />
-        </Button>
-        <div className={cn("relative flex-1 rounded-2xl border bg-card shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
+        <div className={cn("relative flex-1 flex items-center rounded-2xl border bg-card shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
+          <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()} disabled={isSending}>
+            <Paperclip />
+          </Button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageChange}
+            className="hidden"
+            accept="image/*"
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleListening}
+            className={cn(isListening ? 'text-primary' : '', 'transition-colors')}
+            disabled={isSending}
+          >
+            <Mic />
+          </Button>
           {image && (
             <div className="relative p-2">
               <Image src={image.preview} alt="Preview" width={80} height={80} className="rounded-md" data-ai-hint="image preview" />

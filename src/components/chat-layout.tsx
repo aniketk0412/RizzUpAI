@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -45,16 +46,20 @@ import type { ChatSession, Message, Relation, Tone } from '@/types';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
 import CreditDialog from './credit-dialog';
-import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon, Sun } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon, Sun, LogOut, LogIn } from 'lucide-react';
 import { maintainSessionMemory } from '@/ai/flows/maintain-session-memory';
 import { generateChatTitle } from '@/ai/flows/generate-chat-title';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/hooks/use-auth';
 
 const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
 const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
 
 export default function ChatLayout() {
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
+
   const [sessions, setSessions] = useLocalStorage<ChatSession[]>('chat-sessions', []);
   const [activeSessionId, setActiveSessionId] = useLocalStorage<string | null>('active-session-id', null);
   const [credits, setCredits] = useLocalStorage<number>('user-credits', 15);
@@ -70,6 +75,13 @@ export default function ChatLayout() {
 
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
 
   const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
   
@@ -198,6 +210,10 @@ export default function ChatLayout() {
     }
   };
 
+  if (loading || !user) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+  }
+
   return (
     <SidebarProvider>
       <Sidebar variant="sidebar" collapsible="offcanvas">
@@ -260,11 +276,24 @@ export default function ChatLayout() {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-           <div className="flex items-center gap-2 p-2 group-data-[collapsible=icon]:hidden">
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground">U</AvatarFallback>
-            </Avatar>
-            <p className="font-semibold">User</p>
+           <div className="flex flex-col gap-2 p-2 group-data-[collapsible=icon]:hidden">
+            {user ? (
+              <div className="flex items-center gap-2 p-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-primary-foreground">
+                    {user.email?.[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <p className="font-semibold truncate">{user.email}</p>
+                <Button variant="ghost" size="icon" onClick={logout} className="ml-auto">
+                  <LogOut />
+                </Button>
+              </div>
+            ) : (
+               <Button onClick={() => router.push('/login')}>
+                <LogIn className="mr-2" /> Login
+              </Button>
+            )}
           </div>
         </SidebarFooter>
       </Sidebar>
@@ -273,7 +302,7 @@ export default function ChatLayout() {
         <header className="flex items-center justify-between p-2 border-b">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
-            <h2 className="font-headline text-xl">Rizzly</h2>
+            <h2 className="font-headline text-xl">RizzUp</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -312,7 +341,7 @@ export default function ChatLayout() {
           ) : (
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Bot size={64} className="text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-headline">Welcome to Rizzly</h2>
+                <h2 className="mt-4 text-2xl font-headline">Welcome to RizzUp</h2>
                 <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
               </div>
           )}
