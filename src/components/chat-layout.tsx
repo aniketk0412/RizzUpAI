@@ -96,8 +96,8 @@ export default function ChatLayout() {
     const interval = setInterval(checkCreditReset, 1000 * 60);
     return () => clearInterval(interval);
   }, [credits, resetTimestamp, setCredits, setResetTimestamp]);
-  
-  const handleNewChat = () => {
+
+  const handleNewChat = useCallback(() => {
     const newSession: ChatSession = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -106,9 +106,17 @@ export default function ChatLayout() {
       tone: 'Friendly',
       createdAt: Date.now(),
     };
-    setSessions([newSession, ...sessions]);
+    setSessions(prev => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
-  };
+  }, [setSessions, setActiveSessionId]);
+  
+  useEffect(() => {
+    if (sessions.length === 0) {
+      handleNewChat();
+    } else if (!activeSessionId && sessions.length > 0) {
+      setActiveSessionId(sessions.sort((a,b) => b.createdAt - a.createdAt)[0].id);
+    }
+  }, [sessions, activeSessionId, handleNewChat, setActiveSessionId]);
   
   const updateSession = useCallback((sessionId: string, updates: Partial<ChatSession>) => {
     setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, ...updates } : s));
@@ -158,8 +166,8 @@ export default function ChatLayout() {
       setSessions(prev => prev.map(s => {
         if (s.id === activeSession.id) {
           // Make sure to not lose the potentially updated title
-          const currentSession = prev.find(p => p.id === activeSession.id);
-          return { ...currentSession!, messages: [...updatedMessages, aiMessage] };
+          const currentSession = prev.find(p => p.id === activeSessionId) || s;
+          return { ...currentSession, messages: [...updatedMessages, aiMessage] };
         }
         return s;
       }));
@@ -330,3 +338,5 @@ export default function ChatLayout() {
     </SidebarProvider>
   );
 }
+
+    
