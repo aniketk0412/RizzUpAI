@@ -217,7 +217,7 @@ export default function ChatLayout() {
   return (
     <SidebarProvider>
       <div className="flex h-screen">
-        <Sidebar variant="sidebar" collapsible="offcanvas">
+        <Sidebar collapsible="offcanvas">
           <SidebarHeader>
              <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
           </SidebarHeader>
