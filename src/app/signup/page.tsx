@@ -51,7 +51,7 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl font-headline">Sign Up</CardTitle>
+          <CardTitle className="text-2xl font-headline">Sign Up to ChatAI</CardTitle>
           <CardDescription>
             Enter your information to create an account.
           </CardDescription>
@@ -96,6 +96,13 @@ export default function SignupPage() {
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
+           <div className="mt-4 text-center text-xs text-muted-foreground">
+            By signing up, you agree to our{' '}
+            <Link href="/privacy-policy" className="underline" target="_blank">
+              Privacy Policy
+            </Link>
+            .
+          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">

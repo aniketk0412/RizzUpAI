@@ -302,7 +302,7 @@ export default function ChatLayout() {
         <header className="flex items-center justify-between p-2 border-b">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
-            <h2 className="font-headline text-xl">RizzUp</h2>
+            <h2 className="font-headline text-xl">ChatAI</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ export default function ChatLayout() {
           ) : (
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Bot size={64} className="text-muted-foreground" />
-                <h2 className="mt-4 text-2xl font-headline">Welcome to RizzUp</h2>
+                <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
                 <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
               </div>
           )}
