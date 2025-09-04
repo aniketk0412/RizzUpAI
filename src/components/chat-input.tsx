@@ -20,8 +20,15 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
   const handleTranscriptChange = (transcript: string) => {
     setText(transcript);
   };
+  
+  const handleSpeechStart = () => {
+    setText('');
+  };
 
-  const { isListening, toggleListening } = useSpeechToText({ onTranscriptChange: handleTranscriptChange });
+  const { isListening, toggleListening } = useSpeechToText({ 
+    onTranscriptChange: handleTranscriptChange,
+    onStartListening: handleSpeechStart 
+  });
 
   useEffect(() => {
     if (textareaRef.current) {

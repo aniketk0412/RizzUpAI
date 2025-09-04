@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 
 interface SpeechToTextOptions {
   onTranscriptChange: (transcript: string) => void;
+  onStartListening?: () => void;
 }
 
-export function useSpeechToText({ onTranscriptChange }: SpeechToTextOptions) {
+export function useSpeechToText({ onTranscriptChange, onStartListening }: SpeechToTextOptions) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const finalTranscriptRef = useRef('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -25,17 +27,15 @@ export function useSpeechToText({ onTranscriptChange }: SpeechToTextOptions) {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      let finalTranscript = '';
       let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
+          finalTranscriptRef.current += event.results[i][0].transcript;
         } else {
           interimTranscript += event.results[i][0].transcript;
         }
       }
-      const fullTranscript = finalTranscript + interimTranscript;
-      onTranscriptChange(fullTranscript);
+      onTranscriptChange(finalTranscriptRef.current + interimTranscript);
     };
 
     recognition.onerror = (event) => {
@@ -60,14 +60,17 @@ export function useSpeechToText({ onTranscriptChange }: SpeechToTextOptions) {
 
   const toggleListening = () => {
     if (recognitionRef.current) {
-        if (isListening) {
-            recognitionRef.current.stop();
-            setIsListening(false);
-        } else {
-            onTranscriptChange('');
-            recognitionRef.current.start();
-            setIsListening(true);
+      if (isListening) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      } else {
+        finalTranscriptRef.current = '';
+        if (onStartListening) {
+          onStartListening();
         }
+        recognitionRef.current.start();
+        setIsListening(true);
+      }
     }
   };
 
