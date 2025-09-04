@@ -170,7 +170,7 @@ export default function ChatLayout() {
     } finally {
       setIsSending(false);
     }
-  }, [activeSession, credits, setCredits, setSessions, toast, updateSession]);
+  }, [activeSession, credits, setCredits, setSessions, toast, updateSession, activeSessionId]);
 
   const handleRename = () => {
     if (renameDialog.session && newTitle.trim()) {
