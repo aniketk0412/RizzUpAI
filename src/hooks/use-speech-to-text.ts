@@ -6,9 +6,8 @@ interface SpeechToTextOptions {
   onTranscriptChange: (transcript: string) => void;
 }
 
-export function useSpeechToText({ onTranscriptChange }: SpeechToTrapperOptions) {
+export function useSpeechToText({ onTranscriptChange }: SpeechToTextOptions) {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   useEffect(() => {
@@ -36,19 +35,20 @@ export function useSpeechToText({ onTranscriptChange }: SpeechToTrapperOptions) 
         }
       }
       const fullTranscript = finalTranscript + interimTranscript;
-      setTranscript(fullTranscript);
       onTranscriptChange(fullTranscript);
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
+      // The 'aborted' error is thrown when the recognition is stopped manually.
+      // We don't want to log this as an error.
+      if (event.error !== 'aborted') {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      }
     };
     
     recognition.onend = () => {
-      if (isListening) {
-        recognition.start();
-      }
+      setIsListening(false);
     };
 
     recognitionRef.current = recognition;
@@ -59,25 +59,20 @@ export function useSpeechToText({ onTranscriptChange }: SpeechToTrapperOptions) 
   }, [onTranscriptChange]);
 
   const toggleListening = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    } else {
-      setTranscript('');
-      onTranscriptChange('');
-      recognitionRef.current?.start();
-      setIsListening(true);
+    if (recognitionRef.current) {
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            onTranscriptChange('');
+            recognitionRef.current.start();
+            setIsListening(true);
+        }
     }
   };
 
   return {
     isListening,
-    transcript,
     toggleListening,
   };
-}
-
-// Add a dummy interface to fix the type error.
-interface SpeechToTrapperOptions {
-  onTranscriptChange: (transcript: string) => void;
 }
