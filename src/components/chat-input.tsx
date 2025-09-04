@@ -6,6 +6,7 @@ import { Paperclip, Mic, SendHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
+import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
   onSendMessage: (message: string, image?: string) => void;
@@ -67,7 +68,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
   return (
     <div className="p-4 bg-background border-t">
-      <div className="relative rounded-lg border bg-card p-2 shadow-sm">
+      <div className={cn("relative rounded-lg border bg-card p-2 shadow-sm transition-all", isListening && 'ring-2 ring-primary ring-offset-2 ring-offset-background')}>
         {image && (
           <div className="relative p-2">
             <Image src={image.preview} alt="Preview" width={80} height={80} className="rounded-md" data-ai-hint="image preview" />
@@ -106,7 +107,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
           <Textarea
             ref={textareaRef}
             rows={1}
-            placeholder="Type your message..."
+            placeholder={isListening ? "Listening..." : "Type your message..."}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
