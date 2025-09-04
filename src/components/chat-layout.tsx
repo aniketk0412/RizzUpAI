@@ -202,14 +202,14 @@ export default function ChatLayout() {
     <SidebarProvider>
       <Sidebar variant="sidebar" collapsible="offcanvas">
         <SidebarHeader>
-           <Button variant="outline" className="w-full border-dashed" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
+           <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent"/>
+                <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent rounded-lg"/>
               </div>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -220,7 +220,7 @@ export default function ChatLayout() {
                   isActive={session.id === activeSessionId}
                   onClick={() => setActiveSessionId(session.id)}
                   tooltip={{ children: session.title, side: 'right' }}
-                  className="data-[active=true]:bg-accent"
+                  className="data-[active=true]:bg-sidebar-accent rounded-lg"
                 >
                   <span className="truncate">{session.title}</span>
                 </SidebarMenuButton>
