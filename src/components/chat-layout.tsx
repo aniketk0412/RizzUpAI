@@ -186,9 +186,13 @@ export default function ChatLayout() {
         }
         return s;
       }));
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ title: 'Error', description: 'Failed to get response from AI.', variant: 'destructive' });
+      toast({ 
+        title: 'Error Generating Response', 
+        description: error.message || 'An unknown error occurred.', 
+        variant: 'destructive' 
+      });
       setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: updatedMessages } : s));
     } finally {
       setIsSending(false);
@@ -218,7 +222,7 @@ export default function ChatLayout() {
     <SidebarProvider defaultOpen={false}>
       <div className="flex h-screen">
         <Sidebar collapsible="offcanvas">
-          <SidebarHeader>
+           <SidebarHeader>
              <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
           </SidebarHeader>
           <SidebarContent>
