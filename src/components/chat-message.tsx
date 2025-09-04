@@ -46,7 +46,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             <Skeleton className="h-4 w-[200px]" />
           </div>
         ) : (
-          <p className="whitespace-pre-wrap text-card-foreground">{message.text}</p>
+          <p className="whitespace-pre-wrap">{message.text}</p>
         )}
         {!isUser && message.explanation && !message.isProcessing && (
           <div className="space-y-2 pt-2">
