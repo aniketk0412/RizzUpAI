@@ -86,7 +86,7 @@ export default function ChatLayout() {
     } else if (credits > 0 && resetTimestamp) {
       setResetTimestamp(null);
     }
-  }, [credits, resetTimestamp, setResetTimestamp]);
+  }, [credits, resetTimestamp]);
   
   const handleNewChat = () => {
     const newSession: ChatSession = {
