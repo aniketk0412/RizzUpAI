@@ -15,6 +15,7 @@ export type MaintainSessionMemoryInput = z.infer<typeof MaintainSessionMemoryInp
 
 const MaintainSessionMemoryOutputSchema = z.object({
   response: z.string().describe('The AI-generated response.'),
+  explanation: z.string().describe('A brief explanation of why this response will work based on the selected relation and tone.'),
 });
 export type MaintainSessionMemoryOutput = z.infer<typeof MaintainSessionMemoryOutputSchema>;
 
@@ -28,7 +29,7 @@ const prompt = ai.definePrompt({
   output: { schema: MaintainSessionMemoryOutputSchema },
   prompt: `You are a creative chat assistant. Your goal is to help a user draft the perfect response by synthesizing information from several key sources:
 
-Primary Instruction: The core of your task is to respond to the message the user has typed. This is the main request you must address. Your response should be shaped by this.
+Primary Instruction: The core of your task is to respond to the message the user has typed. This is the main request you must address.
 
 Contextual Modifiers: You must shape your reply based on two critical user selections:
 - Relation: The user's relationship with the person they are chatting with is {{{relation}}}.
@@ -50,7 +51,9 @@ Image: {{media url=image}}
 
 User's typed message: "{{{currentMessage}}}"
 
-Your final output should be only the text for the response, with no extra formatting or explanations.
+After generating the response, provide a brief explanation (in the 'explanation' field) of *why* this response will work for the chosen relationship and tone.
+
+Your final output should be only the JSON object containing the response and the explanation.
 `,
 });
 

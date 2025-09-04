@@ -8,6 +8,7 @@ export interface Message {
   sender: Sender;
   image?: string; // data URI
   isProcessing?: boolean;
+  explanation?: string;
 }
 
 export interface ChatSession {

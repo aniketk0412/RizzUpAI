@@ -145,7 +145,12 @@ export default function ChatLayout() {
         ...(image && { image: image }),
       });
       
-      const aiMessage: Message = { id: Date.now().toString(), text: response.response, sender: 'ai' };
+      const aiMessage: Message = { 
+        id: Date.now().toString(), 
+        text: response.response, 
+        sender: 'ai',
+        explanation: response.explanation
+      };
       
       setSessions(prev => prev.map(s => {
         if (s.id === activeSession.id) {
@@ -292,7 +297,7 @@ export default function ChatLayout() {
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Bot size={64} className="text-muted-foreground" />
                 <h2 className="mt-4 text-2xl font-headline">Welcome to Rizzly</h2>
-                <p className="mt-2 text-muted-foreground">Start a new chat from the sidebar to begin.</p>
+                <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
               </div>
           )}
         </main>
