@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreditDialogProps {
   open: boolean;
@@ -31,6 +34,8 @@ const creditPlans = [
 export default function CreditDialog({ open, onOpenChange, credits, resetTimestamp }: CreditDialogProps) {
   const [countdown, setCountdown] = useState('00:00:00');
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     if (!user || credits > 0 || !resetTimestamp) {
@@ -59,6 +64,27 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
 
     return () => clearInterval(interval);
   }, [credits, resetTimestamp, user]);
+  
+  const handleResetCredits = async () => {
+    if (!user) return;
+    setIsResetting(true);
+    try {
+      await setDoc(doc(db, 'users', user.uid), { credits: 10000 }, { merge: true });
+      toast({
+        title: 'Credits Reset!',
+        description: 'You now have 10,000 credits.',
+      });
+      onOpenChange(false);
+    } catch (error: any) {
+       toast({
+        title: 'Error Resetting Credits',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResetting(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -98,6 +124,11 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
                 </CardContent>
               </Card>
             ))}
+          </div>
+          <div className="text-center">
+            <Button variant="secondary" onClick={handleResetCredits} disabled={isResetting}>
+              {isResetting ? 'Resetting...' : 'Reset Credits to 10,000 (Dev)'}
+            </Button>
           </div>
         </div>
       </DialogContent>
