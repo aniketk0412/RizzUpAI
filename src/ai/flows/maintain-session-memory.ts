@@ -3,12 +3,15 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { Message } from '@/types';
+import { getFirestore, doc, getDoc, setDoc, increment } from 'firebase/firestore/lite';
+import {initializeApp, getApps} from 'firebase/app'
 
 const MaintainSessionMemoryInputSchema = z.object({
   relation: z.string().describe("The user's relationship with the person they are chatting with (GF, BF, or Friend)."),
   tone: z.string().describe('The desired style of the response (friendly, flirty, rizz, or romantic).'),
   history: z.array(z.custom<Message>()).describe('The previous chat messages in the session.'),
   currentMessage: z.string().describe('The latest message from the user.'),
+  userId: z.string().describe('The user ID to manage credits.'),
   image: z.string().optional().describe('An optional image attached by the user, as a data URI.'),
 });
 export type MaintainSessionMemoryInput = z.infer<typeof MaintainSessionMemoryInputSchema>;
@@ -22,6 +25,23 @@ export type MaintainSessionMemoryOutput = z.infer<typeof MaintainSessionMemoryOu
 export async function maintainSessionMemory(input: MaintainSessionMemoryInput): Promise<MaintainSessionMemoryOutput> {
   return maintainSessionMemoryFlow(input);
 }
+
+const firebaseConfig = {
+  "projectId": "rizzup-ai",
+  "appId": "1:458871428413:web:93845a3637d176e21d2154",
+  "storageBucket": "rizzup-ai.firebasestorage.app",
+  "apiKey": "AIzaSyCN0YMdOPesj37FJSiaoaazE-P1n8O3sW4",
+  "authDomain": "rizzup-ai.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "458871428413"
+};
+
+let app;
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig);
+}
+const db = getFirestore(app);
+
 
 const prompt = ai.definePrompt({
   name: 'maintainSessionMemoryPrompt',
@@ -64,6 +84,15 @@ const maintainSessionMemoryFlow = ai.defineFlow(
     outputSchema: MaintainSessionMemoryOutputSchema,
   },
   async input => {
+    const userRef = doc(db, 'users', input.userId);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists() || userDoc.data().credits < 1) {
+      throw new Error('Insufficient credits.');
+    }
+    
+    await setDoc(userRef, { credits: increment(-1) }, { merge: true });
+
     const { output } = await prompt(input);
     return output!;
   }

@@ -54,18 +54,21 @@ import { generateChatTitle } from '@/ai/flows/generate-chat-title';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
 const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
 
 export default function ChatLayout() {
-  const { user, loading, logout } = useAuth();
+  const { user, userProfile, loading, logout } = useAuth();
   const router = useRouter();
 
   const [sessions, setSessions] = useLocalStorage<ChatSession[]>('chat-sessions', []);
   const [activeSessionId, setActiveSessionId] = useLocalStorage<string | null>('active-session-id', null);
-  const [credits, setCredits] = useLocalStorage<number>('user-credits', 15);
-  const [resetTimestamp, setResetTimestamp] = useLocalStorage<number | null>('credit-reset-timestamp', null);
+  
+  const credits = userProfile?.credits ?? 0;
+  const resetTimestamp = userProfile?.creditResetTimestamp ?? null;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -99,20 +102,25 @@ export default function ChatLayout() {
   }, [activeSession?.messages]);
 
   useEffect(() => {
-    const checkCreditReset = () => {
+    const checkCreditReset = async () => {
+      if (!user) return;
+      
+      const now = new Date().getTime();
+      
       if (credits === 0 && !resetTimestamp) {
-        setResetTimestamp(new Date().getTime() + 24 * 60 * 60 * 1000);
+        const newTimestamp = now + 24 * 60 * 60 * 1000;
+        await setDoc(doc(db, 'users', user.uid), { creditResetTimestamp: newTimestamp }, { merge: true });
       } else if (credits > 0 && resetTimestamp) {
-        setResetTimestamp(null);
-      } else if (resetTimestamp && new Date().getTime() > resetTimestamp) {
-        setCredits(15);
-        setResetTimestamp(null);
+        await setDoc(doc(db, 'users', user.uid), { creditResetTimestamp: null }, { merge: true });
+      } else if (resetTimestamp && now > resetTimestamp) {
+        await setDoc(doc(db, 'users', user.uid), { credits: 15, creditResetTimestamp: null }, { merge: true });
       }
     };
+    
     checkCreditReset();
     const interval = setInterval(checkCreditReset, 1000 * 60);
     return () => clearInterval(interval);
-  }, [credits, resetTimestamp, setCredits, setResetTimestamp]);
+  }, [credits, resetTimestamp, user]);
 
   const handleNewChat = useCallback(() => {
     const newSession: ChatSession = {
@@ -128,19 +136,19 @@ export default function ChatLayout() {
   }, [setSessions, setActiveSessionId]);
   
   useEffect(() => {
-    if (sessions.length === 0) {
+    if (!loading && user && sessions.length === 0) {
       handleNewChat();
     } else if (!activeSessionId && sessions.length > 0) {
       setActiveSessionId(sessions.sort((a,b) => b.createdAt - a.createdAt)[0].id);
     }
-  }, [sessions, activeSessionId, handleNewChat, setActiveSessionId]);
+  }, [sessions, activeSessionId, handleNewChat, setActiveSessionId, loading, user]);
   
   const updateSession = useCallback((sessionId: string, updates: Partial<ChatSession>) => {
     setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, ...updates } : s));
   }, [setSessions]);
 
   const handleSendMessage = useCallback(async (text: string, image?: string) => {
-    if (!activeSession) return;
+    if (!activeSession || !user) return;
     if (credits <= 0) {
       toast({ title: 'Out of Credits', description: 'Please wait for the daily reset or buy more credits.', variant: 'destructive' });
       setIsCreditDialogOpen(true);
@@ -156,7 +164,6 @@ export default function ChatLayout() {
     const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
     const updatedMessages = [...activeSession.messages, userMessage];
     updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
-    setCredits(prev => prev - 1);
   
     try {
       if (isFirstMessage) {
@@ -170,6 +177,7 @@ export default function ChatLayout() {
         tone: activeSession.tone,
         history: updatedMessages,
         currentMessage: text,
+        userId: user.uid,
         ...(image && { image: image }),
       });
       
@@ -198,7 +206,7 @@ export default function ChatLayout() {
     } finally {
       setIsSending(false);
     }
-  }, [activeSession, credits, setCredits, setSessions, toast, updateSession, activeSessionId]);
+  }, [activeSession, credits, toast, updateSession, activeSessionId, user]);
 
   const handleRename = () => {
     if (renameDialog.session && newTitle.trim()) {
@@ -380,5 +388,3 @@ export default function ChatLayout() {
     </SidebarProvider>
   );
 }
-
-    

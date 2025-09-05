@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
 
 interface CreditDialogProps {
   open: boolean;
@@ -29,9 +30,10 @@ const creditPlans = [
 
 export default function CreditDialog({ open, onOpenChange, credits, resetTimestamp }: CreditDialogProps) {
   const [countdown, setCountdown] = useState('00:00:00');
+  const { user } = useAuth();
 
   useEffect(() => {
-    if (credits > 0 || !resetTimestamp) {
+    if (!user || credits > 0 || !resetTimestamp) {
       setCountdown('00:00:00');
       return;
     }
@@ -56,7 +58,7 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [credits, resetTimestamp]);
+  }, [credits, resetTimestamp, user]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
