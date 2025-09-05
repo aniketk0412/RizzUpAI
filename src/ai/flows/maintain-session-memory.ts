@@ -3,8 +3,9 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { Message } from '@/types';
-import { getFirestore, doc, getDoc, setDoc, increment } from 'firebase/firestore/lite';
-import {initializeApp, getApps} from 'firebase/app'
+import { getFirestore, doc, getDoc, setDoc, increment } from 'firebase/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 
 const MaintainSessionMemoryInputSchema = z.object({
   relation: z.string().describe("The user's relationship with the person they are chatting with (GF, BF, or Friend)."),
@@ -26,21 +27,22 @@ export async function maintainSessionMemory(input: MaintainSessionMemoryInput): 
   return maintainSessionMemoryFlow(input);
 }
 
-const firebaseConfig = {
-  "projectId": "rizzup-ai",
-  "appId": "1:458871428413:web:93845a3637d176e21d2154",
-  "storageBucket": "rizzup-ai.firebasestorage.app",
-  "apiKey": "AIzaSyCN0YMdOPesj37FJSiaoaazE-P1n8O3sW4",
-  "authDomain": "rizzup-ai.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "458871428413"
-};
-
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+// Server-side Firebase Admin initialization
+try {
+  if (!getApps().length) {
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+      initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } else {
+      // For local development, it can use application default credentials
+      initializeApp();
+    }
+  }
+} catch (e) {
+  console.error('Firebase Admin initialization error:', e);
 }
-const db = getFirestore(app);
 
 
 const prompt = ai.definePrompt({
@@ -83,17 +85,24 @@ const maintainSessionMemoryFlow = ai.defineFlow(
     inputSchema: MaintainSessionMemoryInputSchema,
     outputSchema: MaintainSessionMemoryOutputSchema,
   },
-  async input => {
-    const userRef = doc(db, 'users', input.userId);
-    const userDoc = await getDoc(userRef);
+  async (input) => {
+    try {
+      const db = getAdminFirestore();
+      const userRef = db.collection('users').doc(input.userId);
+      const userDoc = await userRef.get();
 
-    if (!userDoc.exists() || userDoc.data().credits < 1) {
-      throw new Error('Insufficient credits.');
+      if (!userDoc.exists || (userDoc.data()?.credits ?? 0) < 1) {
+        throw new Error('Insufficient credits.');
+      }
+
+      await userRef.update({ credits: getAdminFirestore.FieldValue.increment(-1) });
+
+      const { output } = await prompt(input);
+      return output!;
+    } catch (e: any) {
+       console.error("Error in maintainSessionMemoryFlow: ", e);
+       // Re-throw the error to be caught by the client
+       throw new Error(`Request failed with error: ${e.message}`);
     }
-    
-    await setDoc(userRef, { credits: increment(-1) }, { merge: true });
-
-    const { output } = await prompt(input);
-    return output!;
   }
 );
