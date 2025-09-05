@@ -1,0 +1,13 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow users to read and write to their own document in the 'users' collection.
+    // This is necessary for updating credits.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
