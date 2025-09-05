@@ -4,7 +4,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { Message } from '@/types';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import { getFirestore as getAdminFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const MaintainSessionMemoryInputSchema = z.object({
   relation: z.string().describe("The user's relationship with the person they are chatting with (GF, BF, or Friend)."),
@@ -94,7 +94,7 @@ const maintainSessionMemoryFlow = ai.defineFlow(
         throw new Error('Insufficient credits.');
       }
 
-      await userRef.update({ credits: getAdminFirestore.FieldValue.increment(-1) });
+      await userRef.update({ credits: FieldValue.increment(-1) });
 
       const { output } = await prompt(input);
       return output!;
