@@ -3,7 +3,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { Message } from '@/types';
-import { getFirestore, doc, getDoc, setDoc, increment } from 'firebase/firestore';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 
