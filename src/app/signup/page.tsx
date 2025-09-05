@@ -37,7 +37,7 @@ export default function SignupPage() {
       // Create a document for the new user in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
-        credits: 15,
+        credits: 10000,
         creditResetTimestamp: null,
       });
 
