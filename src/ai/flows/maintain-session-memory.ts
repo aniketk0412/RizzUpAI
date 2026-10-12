@@ -2,7 +2,7 @@
 
 import { Type } from '@google/genai';
 import { eq, sql } from 'drizzle-orm';
-import { getGeminiClient, GEMINI_MODEL } from '@/ai/gemini';
+import { generateStructuredJSON } from '@/ai/gemini';
 import { db, isDatabaseConfigured } from '@/db';
 import { users } from '@/db/schema';
 import type { Message, ReplyOption } from '@/types';
@@ -21,15 +21,6 @@ export interface MaintainSessionMemoryOutput {
   explanation: string;
   options: ReplyOption[];
   remainingCredits?: number;
-}
-
-function parseDataUri(dataUri: string): { mimeType: string; data: string } | null {
-  const match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) return null;
-  return {
-    mimeType: match[1],
-    data: match[2],
-  };
 }
 
 export async function maintainSessionMemory(
@@ -60,12 +51,10 @@ export async function maintainSessionMemory(
       remainingCredits = updated?.credits;
     }
 
-    const ai = getGeminiClient();
-
+    // Pass full conversation history to leverage 1M-token context models
     const historyText =
       input.history && input.history.length > 0
         ? input.history
-            .slice(-10)
             .map((m) => `- ${m.sender === 'user' ? 'User' : 'Wingman'}: ${m.text}`)
             .join('\n')
         : '(No previous history - this is the opening message)';
@@ -77,7 +66,7 @@ Context:
 - Relationship with chat partner: ${input.relation} (e.g., GF, BF, Friend)
 - Desired overall tone: ${input.tone} (e.g., Friendly, Flirty, Rizz, Romantic)
 
-Conversation History:
+Full Conversation History (1M Context Memory):
 ${historyText}
 
 User's input / The latest message received:
@@ -89,64 +78,57 @@ Instructions:
    - Option 2 (Smooth & Charming): The sweet spot — confident, engaging, and magnetic.
    - Option 3 (Bold & High Energy): Daring, witty, memorable, high-rizz energy.
 2. Ensure texts sound like authentic, modern human text messages (avoid robotic AI phrasing or corny 1990s pickup lines).
-3. Set 'response' to the best all-around recommendation (usually Option 2).
-4. Set 'explanation' to a brief 1-sentence strategy breakdown on why this trio works.`;
+3. Return strictly valid JSON with this structure:
+{
+  "response": "Top recommended reply string",
+  "explanation": "1-sentence strategic takeaway on why these replies work",
+  "options": [
+    { "label": "Playful Banter", "text": "...", "vibeReason": "..." },
+    { "label": "Smooth & Charming", "text": "...", "vibeReason": "..." },
+    { "label": "Bold & Flirty", "text": "...", "vibeReason": "..." }
+  ]
+}`;
 
-    const contents: any[] = [];
-    if (input.image) {
-      const parsedImage = parseDataUri(input.image);
-      if (parsedImage) {
-        contents.push({
-          inlineData: {
-            mimeType: parsedImage.mimeType,
-            data: parsedImage.data,
+    const result = await generateStructuredJSON({
+      prompt: promptText,
+      systemInstruction:
+        'You are RizzUp AI, an elite dating & conversation wingman. Always return raw JSON matching { response, explanation, options: [{ label, text, vibeReason }] }.',
+      imageDataUri: input.image,
+      geminiSchema: {
+        type: Type.OBJECT,
+        properties: {
+          response: {
+            type: Type.STRING,
+            description: 'The top recommended reply.',
           },
-        });
-      }
-    }
-    contents.push({ text: promptText });
-
-    const result = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            response: {
-              type: Type.STRING,
-              description: 'The top recommended reply.',
-            },
-            explanation: {
-              type: Type.STRING,
-              description: 'Brief strategic takeaway on why these replies work.',
-            },
-            options: {
-              type: Type.ARRAY,
-              description: 'Exactly 3 distinct reply options.',
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  label: {
-                    type: Type.STRING,
-                    description: 'Short vibe title, e.g. "Playful Banter", "Smooth & Charming", "Bold & Flirty"',
-                  },
-                  text: {
-                    type: Type.STRING,
-                    description: 'The exact message reply ready to copy and send',
-                  },
-                  vibeReason: {
-                    type: Type.STRING,
-                    description: '1-sentence explanation of why this option works',
-                  },
+          explanation: {
+            type: Type.STRING,
+            description: 'Brief strategic takeaway on why these replies work.',
+          },
+          options: {
+            type: Type.ARRAY,
+            description: 'Exactly 3 distinct reply options.',
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                label: {
+                  type: Type.STRING,
+                  description: 'Short vibe title, e.g. "Playful Banter", "Smooth & Charming", "Bold & Flirty"',
                 },
-                required: ['label', 'text', 'vibeReason'],
+                text: {
+                  type: Type.STRING,
+                  description: 'The exact message reply ready to copy and send',
+                },
+                vibeReason: {
+                  type: Type.STRING,
+                  description: '1-sentence explanation of why this option works',
+                },
               },
+              required: ['label', 'text', 'vibeReason'],
             },
           },
-          required: ['response', 'explanation', 'options'],
         },
+        required: ['response', 'explanation', 'options'],
       },
     });
 
