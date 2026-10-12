@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Bot, User, Sparkles, Copy, Check, CheckCircle2, Flame, Smile, Zap } from 'lucide-react';
+import { Bot, User, Sparkles, Copy, Check, Flame, Smile, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/types';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -13,31 +13,30 @@ import { Separator } from './ui/separator';
 
 interface ChatMessageProps {
   message: Message;
-  onSelectOption?: (messageId: string, optionIndex: number) => void;
 }
 
 const vibeConfig = [
   {
     icon: Smile,
     badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    borderClass: 'hover:border-emerald-500/40',
-    selectedBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5',
+    borderClass: 'hover:border-emerald-500/50',
+    copiedBorder: 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-500/5',
   },
   {
     icon: Zap,
     badgeClass: 'bg-primary/10 text-primary border-primary/20',
-    borderClass: 'hover:border-primary/40',
-    selectedBorder: 'border-primary ring-2 ring-primary/20 bg-primary/5',
+    borderClass: 'hover:border-primary/50',
+    copiedBorder: 'border-primary ring-2 ring-primary/20 bg-primary/5',
   },
   {
     icon: Flame,
     badgeClass: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-    borderClass: 'hover:border-rose-500/40',
-    selectedBorder: 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-500/5',
+    borderClass: 'hover:border-rose-500/50',
+    copiedBorder: 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-500/5',
   },
 ];
 
-export default function ChatMessage({ message, onSelectOption }: ChatMessageProps) {
+export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -80,10 +79,10 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
 
       {/* AI Message - Processing Skeletons */}
       {!isUser && message.isProcessing && (
-        <div className="w-full max-w-2xl space-y-3">
+        <div className="w-full max-w-3xl space-y-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse mb-1">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
-            <span>Cooking up 3 personalized replies...</span>
+            <span>Cooking up 3 personalized vibes...</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[1, 2, 3].map((i) => (
@@ -91,9 +90,8 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
                 <Skeleton className="h-5 w-24 rounded-full" />
                 <Skeleton className="h-14 w-full rounded-md" />
                 <Skeleton className="h-3 w-4/5" />
-                <div className="flex justify-between pt-2">
-                  <Skeleton className="h-7 w-16" />
-                  <Skeleton className="h-7 w-16" />
+                <div className="pt-2">
+                  <Skeleton className="h-8 w-full rounded-md" />
                 </div>
               </div>
             ))}
@@ -115,15 +113,16 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
             {message.options!.map((option, idx) => {
               const vibe = vibeConfig[idx % vibeConfig.length];
               const Icon = vibe.icon;
-              const isSelected = message.selectedOptionIndex === idx;
+              const isCopied = copiedIndex === idx;
 
               return (
                 <div
                   key={idx}
+                  onClick={() => handleCopy(option.text, idx)}
                   className={cn(
-                    'group relative flex flex-col justify-between rounded-xl border bg-card p-4 transition-all duration-200 shadow-sm',
+                    'group cursor-pointer relative flex flex-col justify-between rounded-xl border bg-card p-4 transition-all duration-200 shadow-sm hover:shadow-md',
                     vibe.borderClass,
-                    isSelected ? vibe.selectedBorder : 'hover:shadow-md'
+                    isCopied && vibe.copiedBorder
                   )}
                 >
                   <div className="space-y-3">
@@ -132,12 +131,6 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
                         <Icon className="h-3 w-3" />
                         {option.label}
                       </Badge>
-                      {isSelected && (
-                        <span className="flex items-center gap-1 text-[11px] font-medium text-primary">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Selected
-                        </span>
-                      )}
                     </div>
 
                     <p className="text-sm font-medium leading-relaxed tracking-tight text-foreground select-text">
@@ -149,35 +142,28 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-4 mt-2 border-t">
+                  <div className="pt-4 mt-2 border-t">
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant={isCopied ? 'default' : 'secondary'}
                       size="sm"
-                      onClick={() => handleCopy(option.text, idx)}
-                      className="h-8 flex-1 text-xs gap-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(option.text, idx);
+                      }}
+                      className="h-8 w-full text-xs gap-1.5"
                     >
-                      {copiedIndex === idx ? (
+                      {isCopied ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-emerald-500" />
-                          <span className="text-emerald-500 font-medium">Copied</span>
+                          <Check className="h-3.5 w-3.5" />
+                          <span className="font-medium">Copied to Clipboard!</span>
                         </>
                       ) : (
                         <>
                           <Copy className="h-3.5 w-3.5" />
-                          Copy
+                          Copy Reply
                         </>
                       )}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant={isSelected ? 'default' : 'secondary'}
-                      size="sm"
-                      onClick={() => onSelectOption?.(message.id, idx)}
-                      className="h-8 flex-1 text-xs gap-1"
-                    >
-                      {isSelected ? 'Active' : 'Use This'}
                     </Button>
                   </div>
                 </div>
@@ -213,4 +199,3 @@ export default function ChatMessage({ message, onSelectOption }: ChatMessageProp
     </div>
   );
 }
-

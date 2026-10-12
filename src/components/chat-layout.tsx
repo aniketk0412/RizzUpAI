@@ -190,7 +190,6 @@ export default function ChatLayout() {
       const response = await maintainSessionMemory({
         relation: activeSession.relation,
         tone: activeSession.tone,
-        history: updatedMessages,
         currentMessage: text,
         userId: user.uid,
         ...(image && { image: image }),
@@ -207,9 +206,8 @@ export default function ChatLayout() {
         id: Date.now().toString(),
         text: response.options?.[defaultOptionIndex]?.text || response.response,
         sender: 'ai',
-        explanation: response.options?.[defaultOptionIndex]?.vibeReason || response.explanation,
+        explanation: response.explanation,
         options: response.options,
-        selectedOptionIndex: response.options?.length ? defaultOptionIndex : undefined,
       };
 
       saveDbChatMessage(activeSession.id, aiMessage).catch(() => {});
@@ -232,29 +230,6 @@ export default function ChatLayout() {
       setIsSending(false);
     }
   }, [activeSession, credits, toast, updateSession, activeSessionId, user, updateLocalCredits, setSessions]);
-
-  const handleSelectOption = useCallback((messageId: string, optionIndex: number) => {
-    if (!activeSession) return;
-    setSessions(prev => prev.map(s => {
-      if (s.id !== activeSession.id) return s;
-      const updated = s.messages.map(m => {
-        if (m.id !== messageId) return m;
-        const selected = m.options?.[optionIndex];
-        if (selected) {
-          updateDbSelectedOption(messageId, optionIndex, selected.text, selected.vibeReason).catch(() => {});
-        }
-        return {
-          ...m,
-          selectedOptionIndex: optionIndex,
-          ...(selected && {
-            text: selected.text,
-            explanation: selected.vibeReason,
-          }),
-        };
-      });
-      return { ...s, messages: updated };
-    }));
-  }, [activeSession, setSessions]);
 
   const handleRename = () => {
     if (renameDialog.session && newTitle.trim()) {
@@ -368,7 +343,7 @@ export default function ChatLayout() {
           <header className="flex items-center justify-between p-2 border-b">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
-              <h2 className="font-headline text-xl">ChatAI</h2>
+              <h2 className="font-headline text-xl">RizzUp AI</h2>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
@@ -405,7 +380,6 @@ export default function ChatLayout() {
                   <ChatMessage 
                     key={message.id} 
                     message={message} 
-                    onSelectOption={handleSelectOption} 
                   />
                 ))}
                  <div ref={messagesEndRef} />
@@ -413,7 +387,7 @@ export default function ChatLayout() {
             ) : (
                <div className="flex flex-col items-center justify-center h-full text-center">
                   <Bot size={64} className="text-muted-foreground" />
-                  <h2 className="mt-4 text-2xl font-headline">Welcome to ChatAI</h2>
+                  <h2 className="mt-4 text-2xl font-headline">Welcome to RizzUp AI</h2>
                   <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
                 </div>
             )}

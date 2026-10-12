@@ -5,12 +5,11 @@ import { eq, sql } from 'drizzle-orm';
 import { generateStructuredJSON } from '@/ai/gemini';
 import { db, isDatabaseConfigured } from '@/db';
 import { users } from '@/db/schema';
-import type { Message, ReplyOption } from '@/types';
+import type { ReplyOption } from '@/types';
 
 export interface MaintainSessionMemoryInput {
   relation: string;
   tone: string;
-  history: Message[];
   currentMessage: string;
   userId: string;
   image?: string;
@@ -51,37 +50,21 @@ export async function maintainSessionMemory(
       remainingCredits = updated?.credits;
     }
 
-    // Pass full conversation history to leverage 1M-token context models
-    const historyText =
-      input.history && input.history.length > 0
-        ? input.history
-            .map((m) => `- ${m.sender === 'user' ? 'User' : 'Wingman'}: ${m.text}`)
-            .join('\n')
-        : '(No previous history - this is the opening message)';
+    const promptText = `You are RizzUp AI, an elite, charismatic wingman.
+Craft 3 distinct, ready-to-send reply options for the user based on:
+- Relationship: ${input.relation} (GF, BF, or Friend)
+- Target Vibe/Tone: ${input.tone} (Friendly, Flirty, Rizz, or Romantic)
+- Message / Context to reply to: "${input.currentMessage || 'Analyze the attached screenshot and give me 3 killer replies.'}"
 
-    const promptText = `You are an elite, charismatic wingman and texting assistant (RizzUp AI).
-Your mission is to craft 3 distinct, high-impact reply options that the user can choose from based on the conversation context, their relationship, and desired tone.
-
-Context:
-- Relationship with chat partner: ${input.relation} (e.g., GF, BF, Friend)
-- Desired overall tone: ${input.tone} (e.g., Friendly, Flirty, Rizz, Romantic)
-
-Full Conversation History (1M Context Memory):
-${historyText}
-
-User's input / The latest message received:
-"${input.currentMessage || 'Analyze the attached screenshot and give me 3 great replies.'}"
-
-Instructions:
-1. Generate 3 varied, natural-sounding reply options in the 'options' array:
-   - Option 1 (Playful & Casual): Low pressure, fun teasing, easy to answer.
-   - Option 2 (Smooth & Charming): The sweet spot — confident, engaging, and magnetic.
-   - Option 3 (Bold & High Energy): Daring, witty, memorable, high-rizz energy.
-2. Ensure texts sound like authentic, modern human text messages (avoid robotic AI phrasing or corny 1990s pickup lines).
-3. Return strictly valid JSON with this structure:
+Rules:
+1. Option 1 (Playful & Casual): Low pressure, light teasing, effortless banter.
+2. Option 2 (Smooth & Charming): The sweet spot — confident, magnetic, and engaging.
+3. Option 3 (Bold & High Energy): Witty, daring, high-rizz energy that stands out.
+4. Keep replies natural, punchy, and authentic to real modern texting (no robotic AI clichés or corny pickup lines).
+5. Return strictly valid JSON matching:
 {
-  "response": "Top recommended reply string",
-  "explanation": "1-sentence strategic takeaway on why these replies work",
+  "response": "Best overall reply",
+  "explanation": "Quick 1-line strategy tip for this situation",
   "options": [
     { "label": "Playful Banter", "text": "...", "vibeReason": "..." },
     { "label": "Smooth & Charming", "text": "...", "vibeReason": "..." },
@@ -92,7 +75,7 @@ Instructions:
     const result = await generateStructuredJSON({
       prompt: promptText,
       systemInstruction:
-        'You are RizzUp AI, an elite dating & conversation wingman. Always return raw JSON matching { response, explanation, options: [{ label, text, vibeReason }] }.',
+        'You are RizzUp AI, an elite dating & texting wingman. Return only raw JSON matching { response, explanation, options: [{ label, text, vibeReason }] }.',
       imageDataUri: input.image,
       geminiSchema: {
         type: Type.OBJECT,
@@ -103,7 +86,7 @@ Instructions:
           },
           explanation: {
             type: Type.STRING,
-            description: 'Brief strategic takeaway on why these replies work.',
+            description: 'Brief 1-sentence strategic takeaway.',
           },
           options: {
             type: Type.ARRAY,
@@ -157,7 +140,7 @@ Instructions:
 
     return {
       response: output.response || options[1]?.text || options[0]?.text,
-      explanation: output.explanation || 'Here are 3 tailored ways to play this:',
+      explanation: output.explanation || 'Pick the vibe that fits your move:',
       options,
       remainingCredits,
     };
