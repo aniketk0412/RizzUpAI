@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { resetDevCredits } from '@/actions/user-actions';
 
 interface CreditDialogProps {
   open: boolean;
@@ -33,7 +32,7 @@ const creditPlans = [
 
 export default function CreditDialog({ open, onOpenChange, credits, resetTimestamp }: CreditDialogProps) {
   const [countdown, setCountdown] = useState('00:00:00');
-  const { user } = useAuth();
+  const { user, updateLocalCredits } = useAuth();
   const { toast } = useToast();
   const [isResetting, setIsResetting] = useState(false);
 
@@ -64,19 +63,20 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
 
     return () => clearInterval(interval);
   }, [credits, resetTimestamp, user]);
-  
+
   const handleResetCredits = async () => {
     if (!user) return;
     setIsResetting(true);
     try {
-      await setDoc(doc(db, 'users', user.uid), { credits: 10000 }, { merge: true });
+      const res = await resetDevCredits(10000);
+      updateLocalCredits(res.credits);
       toast({
         title: 'Credits Reset!',
         description: 'You now have 10,000 credits.',
       });
       onOpenChange(false);
     } catch (error: any) {
-       toast({
+      toast({
         title: 'Error Resetting Credits',
         description: error.message,
         variant: 'destructive',
@@ -84,7 +84,7 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
     } finally {
       setIsResetting(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,7 +109,7 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
           </Card>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {creditPlans.map((plan) => (
-              <Card key={plan.credits} className="flex flex-col">
+              <Card key={plan.credits} className="flex flex-col relative">
                 {plan.bestValue && (
                   <Badge className="absolute -top-3 right-4 bg-primary text-primary-foreground">Best Value</Badge>
                 )}

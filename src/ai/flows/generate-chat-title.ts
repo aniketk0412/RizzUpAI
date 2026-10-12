@@ -1,51 +1,47 @@
 'use server';
 
-/**
- * @fileOverview This flow generates a chat title based on the first user message.
- *
- * - generateChatTitle - A function that generates a chat title.
- * - GenerateChatTitleInput - The input type for the generateChatTitle function.
- * - GenerateChatTitleOutput - The return type for the generateChatTitle function.
- */
+import { Type } from '@google/genai';
+import { getGeminiClient, GEMINI_MODEL } from '@/ai/gemini';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const GenerateChatTitleInputSchema = z.object({
-  firstUserMessage: z
-    .string()
-    .describe('The first message sent by the user in the chat session.'),
-});
-export type GenerateChatTitleInput = z.infer<typeof GenerateChatTitleInputSchema>;
-
-const GenerateChatTitleOutputSchema = z.object({
-  title: z
-    .string()
-    .describe('The generated title for the chat session based on the first message.'),
-});
-export type GenerateChatTitleOutput = z.infer<typeof GenerateChatTitleOutputSchema>;
-
-export async function generateChatTitle(input: GenerateChatTitleInput): Promise<GenerateChatTitleOutput> {
-  return generateChatTitleFlow(input);
+export interface GenerateChatTitleInput {
+  firstUserMessage: string;
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateChatTitlePrompt',
-  input: {schema: GenerateChatTitleInputSchema},
-  output: {schema: GenerateChatTitleOutputSchema},
-  prompt: `Generate a concise title (max 10 words) for a chat session based on the user's first message. The title should accurately reflect the topic or subject of the conversation.
+export interface GenerateChatTitleOutput {
+  title: string;
+}
 
-First Message: {{{firstUserMessage}}}`,
-});
+export async function generateChatTitle(
+  input: GenerateChatTitleInput
+): Promise<GenerateChatTitleOutput> {
+  try {
+    const ai = getGeminiClient();
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: `Generate a short, catchy title (3 to 6 words max) for a dating/chat assistant session based on the user's first message:\n\n"${input.firstUserMessage}"`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            title: {
+              type: Type.STRING,
+              description: 'Short session title (3-6 words)',
+            },
+          },
+          required: ['title'],
+        },
+      },
+    });
 
-const generateChatTitleFlow = ai.defineFlow(
-  {
-    name: 'generateChatTitleFlow',
-    inputSchema: GenerateChatTitleInputSchema,
-    outputSchema: GenerateChatTitleOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+    const parsed = JSON.parse(response.text || '{}');
+    return {
+      title: parsed.title || input.firstUserMessage.slice(0, 32) || 'New Chat',
+    };
+  } catch (error) {
+    console.error('Failed to generate chat title:', error);
+    return {
+      title: input.firstUserMessage.slice(0, 30) || 'New Chat',
+    };
   }
-);
+}

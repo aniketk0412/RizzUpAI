@@ -2,6 +2,12 @@ export type Sender = 'user' | 'ai';
 export type Relation = 'GF' | 'BF' | 'Friend';
 export type Tone = 'Friendly' | 'Flirty' | 'Rizz' | 'Romantic';
 
+export interface ReplyOption {
+  label: string;
+  text: string;
+  vibeReason: string;
+}
+
 export interface Message {
   id: string;
   text: string;
@@ -9,6 +15,8 @@ export interface Message {
   image?: string; // data URI
   isProcessing?: boolean;
   explanation?: string;
+  options?: ReplyOption[];
+  selectedOptionIndex?: number;
 }
 
 export interface ChatSession {

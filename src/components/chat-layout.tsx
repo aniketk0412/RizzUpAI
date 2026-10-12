@@ -54,19 +54,26 @@ import { generateChatTitle } from '@/ai/flows/generate-chat-title';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import {
+  fetchUserSessions,
+  createDbChatSession,
+  updateDbChatSession,
+  deleteDbChatSession,
+  saveDbChatMessage,
+  updateDbSelectedOption,
+} from '@/actions/chat-actions';
 
 const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
 const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
 
 export default function ChatLayout() {
-  const { user, userProfile, loading, logout } = useAuth();
+  const { user, userProfile, loading, logout, refreshProfile, updateLocalCredits } = useAuth();
   const router = useRouter();
 
   const [sessions, setSessions] = useLocalStorage<ChatSession[]>('chat-sessions', []);
   const [activeSessionId, setActiveSessionId] = useLocalStorage<string | null>('active-session-id', null);
-  
+  const [dbSynced, setDbSynced] = useState(false);
+
   const credits = userProfile?.credits ?? 0;
   const resetTimestamp = userProfile?.creditResetTimestamp ?? null;
 
@@ -75,7 +82,7 @@ export default function ChatLayout() {
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
   const [renameDialog, setRenameDialog] = useState<{ open: boolean; session: ChatSession | null }>({ open: false, session: null });
   const [newTitle, setNewTitle] = useState('');
-  
+
   const { theme, toggleTheme } = useTheme();
 
   const { toast } = useToast();
@@ -87,40 +94,40 @@ export default function ChatLayout() {
     }
   }, [user, loading, router]);
 
+  // Sync sessions from Neon DB on initial authentication
+  useEffect(() => {
+    if (!user || dbSynced) return;
+    fetchUserSessions()
+      .then((dbSessions) => {
+        if (dbSessions && dbSessions.length > 0) {
+          setSessions(dbSessions);
+          setActiveSessionId(dbSessions[0].id);
+        }
+      })
+      .catch((err) => console.error('DB session fetch error:', err))
+      .finally(() => setDbSynced(true));
+  }, [user, dbSynced, setSessions, setActiveSessionId]);
 
   const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
-  
+
   const filteredSessions = useMemo(() =>
     sessions
       .filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
       .sort((a, b) => b.createdAt - a.createdAt),
     [sessions, searchQuery]
   );
-  
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeSession?.messages]);
 
   useEffect(() => {
-    const checkCreditReset = async () => {
-      if (!user) return;
-      
-      const now = new Date().getTime();
-      
-      if (credits === 0 && !resetTimestamp) {
-        const newTimestamp = now + 24 * 60 * 60 * 1000;
-        await setDoc(doc(db, 'users', user.uid), { creditResetTimestamp: newTimestamp }, { merge: true });
-      } else if (credits > 0 && resetTimestamp) {
-        await setDoc(doc(db, 'users', user.uid), { creditResetTimestamp: null }, { merge: true });
-      } else if (resetTimestamp && now > resetTimestamp) {
-        await setDoc(doc(db, 'users', user.uid), { credits: 15, creditResetTimestamp: null }, { merge: true });
-      }
-    };
-    
-    checkCreditReset();
-    const interval = setInterval(checkCreditReset, 1000 * 60);
+    if (!user) return;
+    const interval = setInterval(() => {
+      refreshProfile();
+    }, 60 * 1000);
     return () => clearInterval(interval);
-  }, [credits, resetTimestamp, user]);
+  }, [user, refreshProfile]);
 
   const handleNewChat = useCallback(() => {
     const newSession: ChatSession = {
@@ -133,8 +140,9 @@ export default function ChatLayout() {
     };
     setSessions(prev => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
+    createDbChatSession(newSession).catch(() => {});
   }, [setSessions, setActiveSessionId]);
-  
+
   useEffect(() => {
     if (!loading && user && sessions.length === 0) {
       handleNewChat();
@@ -142,9 +150,16 @@ export default function ChatLayout() {
       setActiveSessionId(sessions.sort((a,b) => b.createdAt - a.createdAt)[0].id);
     }
   }, [sessions, activeSessionId, handleNewChat, setActiveSessionId, loading, user]);
-  
+
   const updateSession = useCallback((sessionId: string, updates: Partial<ChatSession>) => {
     setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, ...updates } : s));
+    if (updates.title || updates.relation || updates.tone) {
+      updateDbChatSession(sessionId, {
+        ...(updates.title && { title: updates.title }),
+        ...(updates.relation && { relation: updates.relation }),
+        ...(updates.tone && { tone: updates.tone }),
+      }).catch(() => {});
+    }
   }, [setSessions]);
 
   const handleSendMessage = useCallback(async (text: string, image?: string) => {
@@ -154,24 +169,24 @@ export default function ChatLayout() {
       setIsCreditDialogOpen(true);
       return;
     }
-  
+
     setIsSending(true);
     const userMessage: Message = { id: Date.now().toString(), text, sender: 'user', image };
-    
-    // Check if it's the first message and generate title
+
     const isFirstMessage = activeSession.messages.length === 0;
 
     const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
     const updatedMessages = [...activeSession.messages, userMessage];
     updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
-  
+    saveDbChatMessage(activeSession.id, userMessage).catch(() => {});
+
     try {
       if (isFirstMessage) {
         generateChatTitle({ firstUserMessage: text }).then(({ title }) => {
           updateSession(activeSession.id, { title });
         });
       }
-  
+
       const response = await maintainSessionMemory({
         relation: activeSession.relation,
         tone: activeSession.tone,
@@ -180,33 +195,66 @@ export default function ChatLayout() {
         userId: user.uid,
         ...(image && { image: image }),
       });
-      
-      const aiMessage: Message = { 
-        id: Date.now().toString(), 
-        text: response.response, 
+
+      if (typeof response.remainingCredits === 'number') {
+        updateLocalCredits(response.remainingCredits);
+      } else {
+        updateLocalCredits(Math.max(0, credits - 1));
+      }
+
+      const defaultOptionIndex = response.options && response.options.length > 1 ? 1 : 0;
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        text: response.options?.[defaultOptionIndex]?.text || response.response,
         sender: 'ai',
-        explanation: response.explanation
+        explanation: response.options?.[defaultOptionIndex]?.vibeReason || response.explanation,
+        options: response.options,
+        selectedOptionIndex: response.options?.length ? defaultOptionIndex : undefined,
       };
-      
+
+      saveDbChatMessage(activeSession.id, aiMessage).catch(() => {});
+
       setSessions(prev => prev.map(s => {
         if (s.id === activeSession.id) {
-          // Make sure to not lose the potentially updated title
           const currentSession = prev.find(p => p.id === activeSessionId) || s;
           return { ...currentSession, messages: [...updatedMessages, aiMessage] };
         }
         return s;
       }));
     } catch (error: any) {
-      toast({ 
-        title: 'Error Generating Response', 
-        description: error.message || 'An unknown error occurred.', 
-        variant: 'destructive' 
+      toast({
+        title: 'Error Generating Response',
+        description: error.message || 'An unknown error occurred.',
+        variant: 'destructive'
       });
       setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: updatedMessages } : s));
     } finally {
       setIsSending(false);
     }
-  }, [activeSession, credits, toast, updateSession, activeSessionId, user]);
+  }, [activeSession, credits, toast, updateSession, activeSessionId, user, updateLocalCredits, setSessions]);
+
+  const handleSelectOption = useCallback((messageId: string, optionIndex: number) => {
+    if (!activeSession) return;
+    setSessions(prev => prev.map(s => {
+      if (s.id !== activeSession.id) return s;
+      const updated = s.messages.map(m => {
+        if (m.id !== messageId) return m;
+        const selected = m.options?.[optionIndex];
+        if (selected) {
+          updateDbSelectedOption(messageId, optionIndex, selected.text, selected.vibeReason).catch(() => {});
+        }
+        return {
+          ...m,
+          selectedOptionIndex: optionIndex,
+          ...(selected && {
+            text: selected.text,
+            explanation: selected.vibeReason,
+          }),
+        };
+      });
+      return { ...s, messages: updated };
+    }));
+  }, [activeSession, setSessions]);
 
   const handleRename = () => {
     if (renameDialog.session && newTitle.trim()) {
@@ -218,6 +266,7 @@ export default function ChatLayout() {
 
   const handleDelete = (sessionId: string) => {
     setSessions(sessions.filter(s => s.id !== sessionId));
+    deleteDbChatSession(sessionId).catch(() => {});
     if (activeSessionId === sessionId) {
       setActiveSessionId(sessions.length > 1 ? sessions.filter(s => s.id !== sessionId)[0].id : null);
     }
@@ -352,7 +401,13 @@ export default function ChatLayout() {
           <main className="flex-1 overflow-y-auto p-4 space-y-4">
             {activeSession ? (
               <>
-                {activeSession.messages.map(message => <ChatMessage key={message.id} message={message} />)}
+                {activeSession.messages.map(message => (
+                  <ChatMessage 
+                    key={message.id} 
+                    message={message} 
+                    onSelectOption={handleSelectOption} 
+                  />
+                ))}
                  <div ref={messagesEndRef} />
               </>
             ) : (

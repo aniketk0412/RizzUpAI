@@ -7,15 +7,18 @@ interface SpeechToTextOptions {
   onStartListening?: () => void;
 }
 
+// Support browser SpeechRecognition types
+type SpeechRecognitionType = any;
+
 export function useSpeechToText({ onTranscriptChange, onStartListening }: SpeechToTextOptions) {
   const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionType | null>(null);
   const finalTranscriptRef = useRef('');
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       console.warn('Speech recognition not supported by this browser.');
       return;
@@ -26,7 +29,7 @@ export function useSpeechToText({ onTranscriptChange, onStartListening }: Speech
     recognition.interimResults = true;
     recognition.lang = 'en-US';
 
-    recognition.onresult = (event) => {
+    recognition.onresult = (event: any) => {
       let interimTranscript = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
@@ -38,7 +41,7 @@ export function useSpeechToText({ onTranscriptChange, onStartListening }: Speech
       onTranscriptChange(finalTranscriptRef.current + interimTranscript);
     };
 
-    recognition.onerror = (event) => {
+    recognition.onerror = (event: any) => {
       // The 'aborted' error is thrown when the recognition is stopped manually.
       // We don't want to log this as an error.
       if (event.error !== 'aborted') {
