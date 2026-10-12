@@ -46,18 +46,17 @@ import type { ChatSession, Message, Relation, Tone } from '@/types';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
 import CreditDialog from './credit-dialog';
+import { RizzLogo } from './rizz-logo';
 import {
   MoreHorizontal,
   Plus,
   Search,
   Trash2,
   Edit,
-  Flame,
   Moon,
   Sun,
   LogOut,
   ChevronLeft,
-  Sparkles,
   ArrowUpRight,
 } from 'lucide-react';
 import { maintainSessionMemory } from '@/ai/flows/maintain-session-memory';
@@ -452,12 +451,7 @@ export default function ChatLayout() {
             <div className="max-w-4xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="h-8 w-8 rounded-lg" />
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
-                    <Flame className="h-4 w-4 fill-current" />
-                  </div>
-                  <span className="font-headline text-2xl tracking-tight">RizzUp</span>
-                </div>
+                <RizzLogo size="sm" />
               </div>
 
               {/* Tactile Pill Selectors */}

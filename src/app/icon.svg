@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1A1513" />
+      <stop offset="100%" stop-color="#0C0A09" />
+    </linearGradient>
+    <linearGradient id="accent" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF6B47" />
+      <stop offset="55%" stop-color="#FC4C2B" />
+      <stop offset="100%" stop-color="#D93214" />
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7857" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.06" />
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bg)" stroke="url(#rim)" stroke-width="2" />
+
+  <!-- Custom Chat Bubble + Upward Flame/Spark Cutout -->
+  <path
+    fill-rule="evenodd"
+    clip-rule="evenodd"
+    d="M32 13C20.954 13 12 20.611 12 30C12 34.487 14.048 38.567 17.398 41.611C17.87 42.04 18.068 42.703 17.873 43.311L15.82 49.708C15.468 50.805 16.564 51.773 17.613 51.296L24.85 48.006C25.335 47.785 25.884 47.734 26.404 47.848C28.198 48.241 30.072 48.45 32 48.45C43.046 48.45 52 40.839 52 31.45C52 22.061 43.046 13 32 13ZM34.6 19.8C35.12 19.12 36.2 19.56 36.08 20.41L34.95 28.2H40.4C41.18 28.2 41.62 29.09 41.14 29.71L29.4 44.8C28.88 45.48 27.8 45.04 27.92 44.19L29.05 36.4H23.6C22.82 36.4 22.38 35.51 22.86 34.89L34.6 19.8Z"
+    fill="url(#accent)"
+  />
+</svg>

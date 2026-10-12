@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Flame, ArrowRight, Check, Copy } from 'lucide-react';
+import { ArrowRight, Check, Copy } from 'lucide-react';
+import { RizzLogo } from '@/components/rizz-logo';
 import { authClient } from '@/lib/auth/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -114,12 +115,7 @@ export default function LoginPage() {
 
         {/* Top Bar */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/20">
-              <Flame className="h-4 w-4 fill-current" />
-            </div>
-            <span className="font-headline text-2xl tracking-tight">RizzUp</span>
-          </div>
+          <RizzLogo size="md" />
           <span className="text-xs text-muted-foreground font-medium">
             iMessage · Hinge · IG DMs
           </span>
@@ -225,11 +221,8 @@ export default function LoginPage() {
       {/* Right Sign-In Column — Flex Centered */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 xl:p-10 bg-background overflow-y-auto">
         <div className="flex items-center justify-between lg:justify-end">
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-              <Flame className="h-4 w-4 fill-current" />
-            </div>
-            <span className="font-headline text-xl">RizzUp</span>
+          <div className="lg:hidden">
+            <RizzLogo size="sm" />
           </div>
           <Link
             href="/signup"
