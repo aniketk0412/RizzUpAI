@@ -5,8 +5,8 @@ import { ThemeProvider } from '@/hooks/use-theme';
 import { AuthProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
-  title: 'RizzUp AI — Your Personal Wingman',
-  description: 'AI-powered dating & texting wingman with 3-option smart replies.',
+  title: 'RizzUp AI — Your Unfair Dating & Texting Advantage',
+  description: 'Drop a text or screenshot. Get 3 instant, high-chemistry replies tailored to your vibe.',
 };
 
 export default function RootLayout({
@@ -20,15 +20,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased selection:bg-primary/20 selection:text-primary">
         <ThemeProvider>
           <AuthProvider>
             {children}

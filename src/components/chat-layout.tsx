@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenuAction,
   SidebarOverlay,
@@ -22,7 +21,6 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,7 +46,20 @@ import type { ChatSession, Message, Relation, Tone } from '@/types';
 import ChatMessage from './chat-message';
 import ChatInput from './chat-input';
 import CreditDialog from './credit-dialog';
-import { MoreHorizontal, PlusCircle, Search, Trash2, Edit, Coins, Bot, Moon, Sun, LogOut, LogIn, ChevronLeft } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Plus,
+  Search,
+  Trash2,
+  Edit,
+  Flame,
+  Moon,
+  Sun,
+  LogOut,
+  ChevronLeft,
+  Sparkles,
+  ArrowUpRight,
+} from 'lucide-react';
 import { maintainSessionMemory } from '@/ai/flows/maintain-session-memory';
 import { generateChatTitle } from '@/ai/flows/generate-chat-title';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -60,11 +71,49 @@ import {
   updateDbChatSession,
   deleteDbChatSession,
   saveDbChatMessage,
-  updateDbSelectedOption,
 } from '@/actions/chat-actions';
+import { cn } from '@/lib/utils';
 
-const defaultRelations: Relation[] = ['GF', 'BF', 'Friend'];
-const defaultTones: Tone[] = ['Friendly', 'Flirty', 'Rizz', 'Romantic'];
+const defaultRelations: { value: Relation; label: string }[] = [
+  { value: 'Crush', label: 'Crush / Match' },
+  { value: 'GF', label: 'GF' },
+  { value: 'BF', label: 'BF' },
+  { value: 'Friend', label: 'Friend' },
+];
+
+const defaultTones: { value: Tone; label: string }[] = [
+  { value: 'Flirty', label: 'Flirty' },
+  { value: 'Rizz', label: 'High Rizz' },
+  { value: 'Romantic', label: 'Romantic' },
+  { value: 'Friendly', label: 'Playful' },
+];
+
+const quickStarters = [
+  {
+    tag: 'HINGE / OPENER',
+    prompt: 'She said: "Wait you actually know how to cook?? 👀"',
+    relation: 'Crush' as Relation,
+    tone: 'Flirty' as Tone,
+  },
+  {
+    tag: 'LATE NIGHT TEXT',
+    prompt: 'They texted: "I can’t sleep, entertain me"',
+    relation: 'Crush' as Relation,
+    tone: 'Rizz' as Tone,
+  },
+  {
+    tag: 'DATE LOCK-IN',
+    prompt: 'She said: "My week is kinda crazy tbh, maybe next week?"',
+    relation: 'Crush' as Relation,
+    tone: 'Flirty' as Tone,
+  },
+  {
+    tag: 'SWEET / PARTNER',
+    prompt: 'They said: "Long day at work today, I’m exhausted"',
+    relation: 'GF' as Relation,
+    tone: 'Romantic' as Tone,
+  },
+];
 
 export default function ChatLayout() {
   const { user, userProfile, loading, logout, refreshProfile, updateLocalCredits } = useAuth();
@@ -80,11 +129,13 @@ export default function ChatLayout() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
-  const [renameDialog, setRenameDialog] = useState<{ open: boolean; session: ChatSession | null }>({ open: false, session: null });
+  const [renameDialog, setRenameDialog] = useState<{ open: boolean; session: ChatSession | null }>({
+    open: false,
+    session: null,
+  });
   const [newTitle, setNewTitle] = useState('');
 
   const { theme, toggleTheme } = useTheme();
-
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +145,6 @@ export default function ChatLayout() {
     }
   }, [user, loading, router]);
 
-  // Sync sessions from Neon DB on initial authentication
   useEffect(() => {
     if (!user || dbSynced) return;
     fetchUserSessions()
@@ -108,12 +158,16 @@ export default function ChatLayout() {
       .finally(() => setDbSynced(true));
   }, [user, dbSynced, setSessions, setActiveSessionId]);
 
-  const activeSession = useMemo(() => sessions.find(s => s.id === activeSessionId), [sessions, activeSessionId]);
+  const activeSession = useMemo(
+    () => sessions.find((s) => s.id === activeSessionId),
+    [sessions, activeSessionId]
+  );
 
-  const filteredSessions = useMemo(() =>
-    sessions
-      .filter(s => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
-      .sort((a, b) => b.createdAt - a.createdAt),
+  const filteredSessions = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        .sort((a, b) => b.createdAt - a.createdAt),
     [sessions, searchQuery]
   );
 
@@ -132,13 +186,13 @@ export default function ChatLayout() {
   const handleNewChat = useCallback(() => {
     const newSession: ChatSession = {
       id: Date.now().toString(),
-      title: 'New Chat',
+      title: 'New Session',
       messages: [],
-      relation: 'Friend',
-      tone: 'Friendly',
+      relation: 'Crush',
+      tone: 'Flirty',
       createdAt: Date.now(),
     };
-    setSessions(prev => [newSession, ...prev]);
+    setSessions((prev) => [newSession, ...prev]);
     setActiveSessionId(newSession.id);
     createDbChatSession(newSession).catch(() => {});
   }, [setSessions, setActiveSessionId]);
@@ -147,89 +201,107 @@ export default function ChatLayout() {
     if (!loading && user && sessions.length === 0) {
       handleNewChat();
     } else if (!activeSessionId && sessions.length > 0) {
-      setActiveSessionId(sessions.sort((a,b) => b.createdAt - a.createdAt)[0].id);
+      setActiveSessionId(sessions.sort((a, b) => b.createdAt - a.createdAt)[0].id);
     }
   }, [sessions, activeSessionId, handleNewChat, setActiveSessionId, loading, user]);
 
-  const updateSession = useCallback((sessionId: string, updates: Partial<ChatSession>) => {
-    setSessions(prev => prev.map(s => s.id === sessionId ? { ...s, ...updates } : s));
-    if (updates.title || updates.relation || updates.tone) {
-      updateDbChatSession(sessionId, {
-        ...(updates.title && { title: updates.title }),
-        ...(updates.relation && { relation: updates.relation }),
-        ...(updates.tone && { tone: updates.tone }),
-      }).catch(() => {});
-    }
-  }, [setSessions]);
+  const updateSession = useCallback(
+    (sessionId: string, updates: Partial<ChatSession>) => {
+      setSessions((prev) => prev.map((s) => (s.id === sessionId ? { ...s, ...updates } : s)));
+      if (updates.title || updates.relation || updates.tone) {
+        updateDbChatSession(sessionId, {
+          ...(updates.title && { title: updates.title }),
+          ...(updates.relation && { relation: updates.relation }),
+          ...(updates.tone && { tone: updates.tone }),
+        }).catch(() => {});
+      }
+    },
+    [setSessions]
+  );
 
-  const handleSendMessage = useCallback(async (text: string, image?: string) => {
-    if (!activeSession || !user) return;
-    if (credits <= 0) {
-      toast({ title: 'Out of Credits', description: 'Please wait for the daily reset or buy more credits.', variant: 'destructive' });
-      setIsCreditDialogOpen(true);
-      return;
-    }
-
-    setIsSending(true);
-    const userMessage: Message = { id: Date.now().toString(), text, sender: 'user', image };
-
-    const isFirstMessage = activeSession.messages.length === 0;
-
-    const loadingMessage: Message = { id: (Date.now() + 1).toString(), text: '', sender: 'ai', isProcessing: true };
-    const updatedMessages = [...activeSession.messages, userMessage];
-    updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
-    saveDbChatMessage(activeSession.id, userMessage).catch(() => {});
-
-    try {
-      if (isFirstMessage) {
-        generateChatTitle({ firstUserMessage: text }).then(({ title }) => {
-          updateSession(activeSession.id, { title });
+  const handleSendMessage = useCallback(
+    async (text: string, image?: string) => {
+      if (!activeSession || !user) return;
+      if (credits <= 0) {
+        toast({
+          title: 'Out of Credits',
+          description: 'Please wait for the daily reset or top up your credits.',
+          variant: 'destructive',
         });
+        setIsCreditDialogOpen(true);
+        return;
       }
 
-      const response = await maintainSessionMemory({
-        relation: activeSession.relation,
-        tone: activeSession.tone,
-        currentMessage: text,
-        userId: user.uid,
-        ...(image && { image: image }),
-      });
+      setIsSending(true);
+      const userMessage: Message = { id: Date.now().toString(), text, sender: 'user', image };
+      const isFirstMessage = activeSession.messages.length === 0;
 
-      if (typeof response.remainingCredits === 'number') {
-        updateLocalCredits(response.remainingCredits);
-      } else {
-        updateLocalCredits(Math.max(0, credits - 1));
-      }
-
-      const defaultOptionIndex = response.options && response.options.length > 1 ? 1 : 0;
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        text: response.options?.[defaultOptionIndex]?.text || response.response,
+      const loadingMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: '',
         sender: 'ai',
-        explanation: response.explanation,
-        options: response.options,
+        isProcessing: true,
       };
+      const updatedMessages = [...activeSession.messages, userMessage];
+      updateSession(activeSession.id, { messages: [...updatedMessages, loadingMessage] });
+      saveDbChatMessage(activeSession.id, userMessage).catch(() => {});
 
-      saveDbChatMessage(activeSession.id, aiMessage).catch(() => {});
-
-      setSessions(prev => prev.map(s => {
-        if (s.id === activeSession.id) {
-          const currentSession = prev.find(p => p.id === activeSessionId) || s;
-          return { ...currentSession, messages: [...updatedMessages, aiMessage] };
+      try {
+        if (isFirstMessage && text) {
+          generateChatTitle({ firstUserMessage: text }).then(({ title }) => {
+            updateSession(activeSession.id, { title });
+          });
         }
-        return s;
-      }));
-    } catch (error: any) {
-      toast({
-        title: 'Error Generating Response',
-        description: error.message || 'An unknown error occurred.',
-        variant: 'destructive'
-      });
-      setSessions(prev => prev.map(s => s.id === activeSession.id ? { ...s, messages: updatedMessages } : s));
-    } finally {
-      setIsSending(false);
-    }
-  }, [activeSession, credits, toast, updateSession, activeSessionId, user, updateLocalCredits, setSessions]);
+
+        const response = await maintainSessionMemory({
+          relation: activeSession.relation,
+          tone: activeSession.tone,
+          currentMessage: text,
+          userId: user.uid,
+          ...(image && { image }),
+        });
+
+        if (typeof response.remainingCredits === 'number') {
+          updateLocalCredits(response.remainingCredits);
+        } else {
+          updateLocalCredits(Math.max(0, credits - 1));
+        }
+
+        const defaultOptionIndex = response.options && response.options.length > 1 ? 1 : 0;
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          text: response.options?.[defaultOptionIndex]?.text || response.response,
+          sender: 'ai',
+          explanation: response.explanation,
+          options: response.options,
+        };
+
+        saveDbChatMessage(activeSession.id, aiMessage).catch(() => {});
+
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id === activeSession.id) {
+              const currentSession = prev.find((p) => p.id === activeSessionId) || s;
+              return { ...currentSession, messages: [...updatedMessages, aiMessage] };
+            }
+            return s;
+          })
+        );
+      } catch (error: any) {
+        toast({
+          title: 'Error Generating Replies',
+          description: error.message || 'An unknown error occurred.',
+          variant: 'destructive',
+        });
+        setSessions((prev) =>
+          prev.map((s) => (s.id === activeSession.id ? { ...s, messages: updatedMessages } : s))
+        );
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [activeSession, credits, toast, updateSession, activeSessionId, user, updateLocalCredits, setSessions]
+  );
 
   const handleRename = () => {
     if (renameDialog.session && newTitle.trim()) {
@@ -240,73 +312,110 @@ export default function ChatLayout() {
   };
 
   const handleDelete = (sessionId: string) => {
-    setSessions(sessions.filter(s => s.id !== sessionId));
+    setSessions(sessions.filter((s) => s.id !== sessionId));
     deleteDbChatSession(sessionId).catch(() => {});
     if (activeSessionId === sessionId) {
-      setActiveSessionId(sessions.length > 1 ? sessions.filter(s => s.id !== sessionId)[0].id : null);
+      setActiveSessionId(
+        sessions.length > 1 ? sessions.filter((s) => s.id !== sessionId)[0].id : null
+      );
     }
   };
 
   if (loading || !user) {
-    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex items-center gap-3 font-code text-xs uppercase tracking-widest text-muted-foreground">
+          <div className="h-2.5 w-2.5 rounded-full bg-primary animate-ping" />
+          Loading Studio...
+        </div>
+      </div>
+    );
   }
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="flex min-h-screen">
-        <Sidebar collapsible="offcanvas">
+      <div className="flex min-h-screen w-full bg-background">
+        <Sidebar collapsible="offcanvas" className="border-r border-border/70">
           <SidebarRail className="group-data-[state=expanded]:bg-background group-data-[state=expanded]:hover:bg-accent group-data-[state=expanded]:text-foreground">
             <ChevronLeft className="size-4 transition-transform duration-200 group-data-[state=collapsed]:rotate-180" />
           </SidebarRail>
-           <SidebarHeader>
-             <Button variant="outline" className="w-full border-dashed rounded-lg" onClick={handleNewChat}><PlusCircle className="mr-2" /> <span className="group-data-[collapsible=icon]:hidden">New Chat</span></Button>
+
+          <SidebarHeader className="p-3">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2 rounded-xl border-border/80 bg-card hover:bg-accent font-medium text-xs h-10"
+              onClick={handleNewChat}
+            >
+              <Plus className="h-4 w-4 text-primary" />
+              <span className="group-data-[collapsible=icon]:hidden">New Session</span>
+            </Button>
           </SidebarHeader>
+
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupContent>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search chats..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 group-data-[collapsible=icon]:hidden bg-transparent rounded-lg"/>
+                <div className="relative px-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Filter history..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 h-9 text-xs group-data-[collapsible=icon]:hidden bg-card/60 rounded-xl border-border/70"
+                  />
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
-            <SidebarMenu>
-              {filteredSessions.map(session => (
-                <SidebarMenuItem key={session.id} className="mx-2">
+
+            <SidebarMenu className="space-y-0.5 px-2">
+              {filteredSessions.map((session) => (
+                <SidebarMenuItem key={session.id}>
                   <SidebarMenuButton
                     isActive={session.id === activeSessionId}
                     onClick={() => setActiveSessionId(session.id)}
                     tooltip={{ children: session.title, side: 'right' }}
-                    className="data-[active=true]:bg-sidebar-accent rounded-lg"
+                    className="data-[active=true]:bg-sidebar-accent rounded-xl text-xs h-9"
                   >
                     <span className="truncate">{session.title}</span>
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <SidebarMenuAction showOnHover>
-                        <MoreHorizontal />
+                        <MoreHorizontal className="h-4 w-4" />
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right">
-                      <DropdownMenuItem onClick={() => { setNewTitle(session.title); setRenameDialog({ open: true, session }); }}>
-                        <Edit className="mr-2 h-4 w-4" /> Rename
+                    <DropdownMenuContent side="right" className="rounded-xl">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setNewTitle(session.title);
+                          setRenameDialog({ open: true, session });
+                        }}
+                      >
+                        <Edit className="mr-2 h-3.5 w-3.5" /> Rename
                       </DropdownMenuItem>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                            <Trash2 className="mr-2 h-4 w-4 text-destructive" /> <span className="text-destructive">Delete</span>
+                            <Trash2 className="mr-2 h-3.5 w-3.5 text-destructive" />
+                            <span className="text-destructive">Delete</span>
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
-                        <AlertDialogContent>
+                        <AlertDialogContent className="rounded-2xl">
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle className="font-headline text-2xl">
+                              Delete Session?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the chat "{session.title}".
+                              This will permanently remove &ldquo;{session.title}&rdquo;.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(session.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(session.id)}
+                              className="rounded-xl bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -316,101 +425,227 @@ export default function ChatLayout() {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter>
-             <div className="flex flex-col gap-2 p-2 group-data-[collapsible=icon]:hidden">
-              {user ? (
-                <div className="flex items-center gap-2 p-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user.email?.[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <p className="font-semibold truncate">{user.email}</p>
-                  <Button variant="ghost" size="icon" onClick={logout} className="ml-auto">
-                    <LogOut />
-                  </Button>
-                </div>
-              ) : (
-                 <Button onClick={() => router.push('/login')}>
-                  <LogIn className="mr-2" /> Login
-                </Button>
-              )}
+
+          <SidebarFooter className="border-t border-border/60 p-3">
+            <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:hidden">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg bg-primary text-primary-foreground font-code text-xs">
+                  {user.email?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{user.email}</p>
+                <p className="font-code text-[10px] text-muted-foreground">{credits} credits left</p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={logout} className="h-8 w-8 rounded-lg">
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </SidebarFooter>
         </Sidebar>
+
         <SidebarOverlay />
-        <SidebarInset>
-          <header className="flex items-center justify-between p-2 border-b">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <h2 className="font-headline text-xl">RizzUp AI</h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Relation:</span>
-                <Select value={activeSession?.relation || 'Friend'} onValueChange={(v: Relation) => activeSession && updateSession(activeSession.id, { relation: v })}>
-                  <SelectTrigger className="w-[120px] font-headline"><SelectValue placeholder="Relation" /></SelectTrigger>
-                  <SelectContent>
-                    {defaultRelations.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+
+        <SidebarInset className="flex flex-col min-h-screen">
+          {/* Top Editorial Bar + Calibrator Pills */}
+          <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
+            <div className="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <SidebarTrigger className="h-8 w-8 rounded-lg" />
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
+                    <Flame className="h-4 w-4 fill-current" />
+                  </div>
+                  <span className="font-headline text-2xl tracking-tight">RizzUp</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Tone:</span>
-                <Select value={activeSession?.tone || 'Friendly'} onValueChange={(v: Tone) => activeSession && updateSession(activeSession.id, { tone: v })}>
-                  <SelectTrigger className="w-[150px] font-headline"><SelectValue placeholder="Tone" /></SelectTrigger>
-                  <SelectContent>
-                    {defaultTones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+
+              {/* Tactile Pill Selectors */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Relation Pills */}
+                <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
+                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
+                    Who:
+                  </span>
+                  {defaultRelations.map((rel) => {
+                    const active = (activeSession?.relation || 'Crush') === rel.value;
+                    return (
+                      <button
+                        key={rel.value}
+                        type="button"
+                        onClick={() =>
+                          activeSession && updateSession(activeSession.id, { relation: rel.value })
+                        }
+                        className={cn(
+                          'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                          active
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {rel.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Tone Pills */}
+                <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
+                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
+                    Vibe:
+                  </span>
+                  {defaultTones.map((t) => {
+                    const active = (activeSession?.tone || 'Flirty') === t.value;
+                    return (
+                      <button
+                        key={t.value}
+                        type="button"
+                        onClick={() =>
+                          activeSession && updateSession(activeSession.id, { tone: t.value })
+                        }
+                        className={cn(
+                          'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                          active
+                            ? 'bg-foreground text-background shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <Button variant="outline" onClick={() => setIsCreditDialogOpen(true)}>
-                <Coins className="mr-2" /> {credits} Credits
-              </Button>
-              <Button variant="ghost" size="icon" onClick={toggleTheme}>
-                {theme === 'dark' ? <Sun /> : <Moon />}
-              </Button>
+
+              {/* Right Actions: Credits + Theme */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreditDialogOpen(true)}
+                  className="h-8 rounded-xl border-border/80 bg-card font-code text-xs gap-1.5"
+                >
+                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  {credits} <span className="hidden sm:inline">CREDITS</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="h-8 w-8 rounded-xl"
+                >
+                  {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </header>
-          
-          <main className="flex-1 overflow-y-auto p-4 space-y-4">
-            {activeSession ? (
-              <>
-                {activeSession.messages.map(message => (
-                  <ChatMessage 
-                    key={message.id} 
-                    message={message} 
-                  />
-                ))}
-                 <div ref={messagesEndRef} />
-              </>
-            ) : (
-               <div className="flex flex-col items-center justify-center h-full text-center">
-                  <Bot size={64} className="text-muted-foreground" />
-                  <h2 className="mt-4 text-2xl font-headline">Welcome to RizzUp AI</h2>
-                  <p className="mt-2 text-muted-foreground">Unlock your inner charmer.</p>
+
+          {/* Main Workspace */}
+          <main className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="max-w-4xl mx-auto space-y-8">
+              {activeSession && activeSession.messages.length > 0 ? (
+                <>
+                  {activeSession.messages.map((message) => (
+                    <ChatMessage key={message.id} message={message} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              ) : (
+                /* Empty State: Editorial Launchpad with 1-Tap Scenarios */
+                <div className="py-8 sm:py-14 space-y-10">
+                  <div className="space-y-3 max-w-xl">
+                    <div className="inline-flex items-center gap-1.5 font-code text-[11px] uppercase tracking-widest text-primary">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Stateless 3-Option Wingman
+                    </div>
+                    <h1 className="font-headline text-4xl sm:text-5xl tracking-tight leading-[1.06]">
+                      What did they just <span className="italic text-primary">text you</span>?
+                    </h1>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Paste their message below, upload a screenshot of your chat, or tap a live scenario below to test the 3-angle generator.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="font-code text-[10px] uppercase tracking-widest text-muted-foreground">
+                      Quick-Try Scenarios (1-Tap Test)
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {quickStarters.map((item, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          disabled={isSending}
+                          onClick={() => {
+                            if (activeSession) {
+                              updateSession(activeSession.id, {
+                                relation: item.relation,
+                                tone: item.tone,
+                              });
+                            }
+                            handleSendMessage(item.prompt);
+                          }}
+                          className="group text-left rounded-2xl border border-border/80 bg-card hover:border-primary/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between gap-3"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-code text-[10px] uppercase tracking-wider text-primary font-semibold">
+                              {item.tag}
+                            </span>
+                            <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                          <p className="text-sm font-medium text-foreground leading-snug">
+                            {item.prompt}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-            )}
+              )}
+            </div>
           </main>
-          
+
           {activeSession && <ChatInput onSendMessage={handleSendMessage} isSending={isSending} />}
         </SidebarInset>
       </div>
 
-      <CreditDialog open={isCreditDialogOpen} onOpenChange={setIsCreditDialogOpen} credits={credits} resetTimestamp={resetTimestamp} />
+      <CreditDialog
+        open={isCreditDialogOpen}
+        onOpenChange={setIsCreditDialogOpen}
+        credits={credits}
+        resetTimestamp={resetTimestamp}
+      />
 
-      <Dialog open={renameDialog.open} onOpenChange={(open) => setRenameDialog({ open, session: renameDialog.session })}>
-        <DialogContent>
+      <Dialog
+        open={renameDialog.open}
+        onOpenChange={(open) => setRenameDialog({ open, session: renameDialog.session })}
+      >
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Rename Chat</DialogTitle>
+            <DialogTitle className="font-headline text-2xl">Rename Session</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="chat-title">New Title</Label>
-            <Input id="chat-title" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+          <div className="grid gap-3 py-3">
+            <Label htmlFor="chat-title" className="text-xs">
+              Session Title
+            </Label>
+            <Input
+              id="chat-title"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="rounded-xl"
+            />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRenameDialog({ open: false, session: null })}>Cancel</Button>
-            <Button onClick={handleRename}>Save</Button>
+            <Button
+              variant="outline"
+              onClick={() => setRenameDialog({ open: false, session: null })}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleRename} className="rounded-xl">
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

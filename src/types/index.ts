@@ -1,5 +1,5 @@
 export type Sender = 'user' | 'ai';
-export type Relation = 'GF' | 'BF' | 'Friend';
+export type Relation = 'Crush' | 'GF' | 'BF' | 'Friend';
 export type Tone = 'Friendly' | 'Flirty' | 'Rizz' | 'Romantic';
 
 export interface ReplyOption {
