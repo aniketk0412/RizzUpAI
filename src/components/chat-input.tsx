@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, type ChangeEvent, type KeyboardEvent } from 'react';
 import Image from 'next/image';
-import { ImagePlus, Mic, Sparkles, X } from 'lucide-react';
+import { ImagePlus, Mic, ArrowUp, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
@@ -27,7 +27,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 140)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [text]);
 
@@ -58,25 +58,24 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
   };
 
   return (
-    <div className="w-full border-t border-border/70 bg-background/90 backdrop-blur-md px-4 py-3.5">
-      <div className="max-w-4xl mx-auto">
+    <div className="shrink-0 w-full border-t border-border/70 bg-background/90 backdrop-blur-md px-4 py-3">
+      <div className="max-w-3xl mx-auto">
         {image && (
-          <div className="mb-2.5 inline-flex items-center gap-3 rounded-xl border border-border bg-card p-2 pr-3">
+          <div className="mb-2 inline-flex items-center gap-3 rounded-xl border border-border bg-card p-1.5 pr-3">
             <Image
               src={image.preview}
               alt="Screenshot preview"
-              width={56}
-              height={56}
-              className="rounded-lg object-cover h-12 w-12 border border-border"
+              width={48}
+              height={48}
+              className="rounded-lg object-cover h-10 w-10 border border-border"
             />
             <div className="text-xs">
               <p className="font-medium text-foreground">Screenshot attached</p>
-              <p className="text-muted-foreground font-code text-[10px]">Ready for vision analysis</p>
             </div>
             <Button
               size="icon"
               variant="ghost"
-              className="h-7 w-7 rounded-full hover:bg-destructive/15 hover:text-destructive"
+              className="h-6 w-6 rounded-full hover:bg-destructive/15 hover:text-destructive"
               onClick={() => setImage(null)}
             >
               <X className="h-3.5 w-3.5" />
@@ -86,7 +85,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
         <div
           className={cn(
-            'relative flex items-end gap-2 rounded-2xl border border-border/90 bg-card p-2 shadow-lg transition-all focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/15',
+            'relative flex items-end gap-1.5 rounded-2xl border border-border/85 bg-card p-1.5 shadow-md transition-all focus-within:border-primary/60',
             isListening && 'ring-2 ring-primary border-primary'
           )}
         >
@@ -105,7 +104,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             title="Upload chat screenshot"
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending}
-            className="h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0"
           >
             <ImagePlus className="h-4 w-4" />
           </Button>
@@ -118,7 +117,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             onClick={toggleListening}
             disabled={isSending}
             className={cn(
-              'h-10 w-10 rounded-xl text-muted-foreground hover:text-foreground shrink-0 transition-colors',
+              'h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 transition-colors',
               isListening && 'text-primary bg-primary/10'
             )}
           >
@@ -131,12 +130,12 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             placeholder={
               isListening
                 ? 'Listening...'
-                : 'Paste what they said, describe the situation, or drop a screenshot...'
+                : 'Paste what they said or drop a screenshot...'
             }
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full resize-none border-0 bg-transparent py-2.5 px-1 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[40px]"
+            className="w-full resize-none border-0 bg-transparent py-2 px-1 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[36px]"
             disabled={isSending}
           />
 
@@ -144,10 +143,10 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             type="button"
             onClick={handleSend}
             disabled={isSending || (!text.trim() && !image)}
-            className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs gap-1.5 shrink-0 shadow-md shadow-primary/20"
+            className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs gap-1.5 shrink-0"
           >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{isSending ? 'Cooking...' : 'Get 3 Replies'}</span>
+            <span>{isSending ? 'Writing...' : 'Get Replies'}</span>
+            <ArrowUp className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>

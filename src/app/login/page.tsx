@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Flame, ArrowRight, Sparkles, Check } from 'lucide-react';
+import { Flame, ArrowRight, Check, Copy } from 'lucide-react';
 import { authClient } from '@/lib/auth/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -21,24 +21,21 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-const previewDeck = [
+const sampleReplies = [
   {
-    idx: '01',
-    tag: 'PLAYFUL TEASE',
-    text: 'Only my signature pasta, and yes it requires a strict NDA and a second glass of wine.',
-    active: false,
+    vibe: 'Chill',
+    dot: 'bg-emerald-400',
+    text: 'caught me. tastes like lawn clippings tbh i’m just here for the company',
   },
   {
-    idx: '02',
-    tag: 'THE SWEET SPOT',
-    text: 'I make a dangerously good vodka rigatoni. You’re welcome to be the judge this Thursday.',
-    active: true,
+    vibe: 'Smooth',
+    dot: 'bg-primary',
+    text: 'maybe a little. worked though didn’t it, we’re still talking',
   },
   {
-    idx: '03',
-    tag: 'HIGH VOLTAGE',
-    text: 'Careful, if I cook for you once you’re going to start finding excuses to come over.',
-    active: false,
+    vibe: 'Bold',
+    dot: 'bg-amber-400',
+    text: 'i know a spot that’ll ruin all other matcha for you. free thursday?',
   },
 ];
 
@@ -46,6 +43,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedSample, setSelectedSample] = useState(1);
   const router = useRouter();
   const { refreshProfile } = useAuth();
   const { toast } = useToast();
@@ -106,106 +104,129 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground grid lg:grid-cols-12">
-      {/* Left Editorial Showcase (7 columns on desktop) */}
-      <div className="hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 border-r border-border/70 relative overflow-hidden bg-gradient-to-br from-background via-card to-background">
+    <div className="flex min-h-dvh lg:h-dvh lg:overflow-hidden w-full bg-background text-foreground">
+      {/* Left Showcase Panel — Locked Flex Column */}
+      <div className="hidden lg:flex lg:w-[55%] xl:w-[57%] flex-col justify-between p-8 xl:p-10 border-r border-border/60 relative overflow-hidden bg-gradient-to-b from-background via-card/40 to-background">
         <div
-          className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full opacity-20 blur-3xl"
+          className="pointer-events-none absolute -top-36 -left-36 h-80 w-80 rounded-full opacity-15 blur-3xl"
           style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
         />
 
-        {/* Brand Header */}
+        {/* Top Bar */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25">
-              <Flame className="h-5 w-5 fill-current" />
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/20">
+              <Flame className="h-4 w-4 fill-current" />
             </div>
             <span className="font-headline text-2xl tracking-tight">RizzUp</span>
-            <span className="font-code text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/30 text-primary bg-primary/10">
-              v2.5 Studio
-            </span>
           </div>
-          <span className="font-code text-xs text-muted-foreground">
-            3-OPTION CALIBRATED WINGMAN
+          <span className="text-xs text-muted-foreground font-medium">
+            iMessage · Hinge · IG DMs
           </span>
         </div>
 
-        {/* Center Editorial + Live Interactive Artifact */}
-        <div className="relative z-10 max-w-xl my-auto space-y-8">
-          <div className="space-y-3">
-            <p className="font-code text-xs uppercase tracking-[0.2em] text-primary">
-              Instant Chemistry Engine
-            </p>
-            <h1 className="font-headline text-5xl xl:text-6xl leading-[1.03] tracking-tight">
-              Never leave ’em on read.{' '}
-              <span className="italic text-primary">Never send a dry text</span> again.
+        {/* Center Content — Compact Flex Stack */}
+        <div className="relative z-10 flex flex-col gap-6 max-w-xl my-auto">
+          <div className="space-y-2.5">
+            <h1 className="font-headline text-4xl xl:text-5xl leading-[1.04] tracking-tight">
+              Don’t overthink the reply.{' '}
+              <span className="italic text-primary">Send the right one.</span>
             </h1>
-            <p className="text-muted-foreground text-base leading-relaxed max-w-md">
-              Paste their message or drop a screenshot from Hinge, Tinder, or iMessage. Get three calibrated angles—from playful banter to high-voltage charm.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
+              Paste their text or drop a screenshot. Get three natural replies that actually sound like a human—not a bot.
             </p>
           </div>
 
-          {/* Live Simulated Conversation Deck */}
-          <div className="rounded-2xl border border-border/80 bg-background/80 backdrop-blur-md p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-medium">Incoming text · Crush</span>
+          {/* Interactive Message Thread Card */}
+          <div className="flex flex-col rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-4 shadow-xl gap-3.5">
+            {/* Incoming DM Header & Bubble */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
+                <span className="flex items-center gap-1.5 font-medium text-foreground/80">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  maya · Hinge
+                </span>
+                <span>just now</span>
               </div>
-              <span className="font-code text-[11px] text-muted-foreground">TONE: FLIRTY</span>
+              <div className="self-start rounded-2xl rounded-tl-sm bg-secondary/90 border border-border/60 px-3.5 py-2 text-[13px] text-foreground">
+                be honest did you just say you like matcha to impress me
+              </div>
             </div>
 
-            <div className="inline-block rounded-2xl rounded-tl-sm bg-secondary px-4 py-2.5 text-sm font-medium">
-              “Wait you actually know how to cook?? 👀”
-            </div>
+            {/* 3 Flex Reply Rows */}
+            <div className="flex flex-col gap-2 pt-1 border-t border-border/50">
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
+                <span>Pick your angle</span>
+                <span className="font-code text-[10px]">TAP TO PREVIEW</span>
+              </div>
 
-            <div className="grid grid-cols-3 gap-2.5 pt-1">
-              {previewDeck.map((card) => (
-                <div
-                  key={card.idx}
-                  className={`rounded-xl border p-3.5 flex flex-col justify-between transition-all ${
-                    card.active
-                      ? 'border-primary bg-primary/[0.07] ring-1 ring-primary/30'
-                      : 'border-border/70 bg-card/60 opacity-80'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-code text-[10px] tracking-wider text-primary font-semibold">
-                        {card.idx} / {card.tag}
+              {sampleReplies.map((item, idx) => {
+                const isSelected = selectedSample === idx;
+                return (
+                  <button
+                    key={item.vibe}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSample(idx);
+                      navigator.clipboard?.writeText(item.text);
+                    }}
+                    className={`group flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
+                      isSelected
+                        ? 'border-primary/80 bg-primary/[0.08] shadow-sm'
+                        : 'border-border/60 bg-background/60 hover:border-border hover:bg-background/90'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-flex items-center gap-1.5 shrink-0 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground/90">
+                        <span className={`h-1.5 w-1.5 rounded-full ${item.dot}`} />
+                        {item.vibe}
                       </span>
-                      {card.active && (
-                        <span className="inline-flex items-center gap-0.5 font-code text-[10px] text-emerald-400">
-                          <Check className="h-3 w-3" /> COPIED
-                        </span>
-                      )}
+                      <p className="text-[13px] text-foreground/95 leading-snug truncate sm:whitespace-normal">
+                        {item.text}
+                      </p>
                     </div>
-                    <p className="text-xs leading-relaxed text-foreground/95">
-                      “{card.text}”
-                    </p>
-                  </div>
-                </div>
-              ))}
+
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground group-hover:text-foreground'
+                      }`}
+                    >
+                      {isSelected ? (
+                        <>
+                          <Check className="h-3 w-3" />
+                          <span>Selected</span>
+                        </>
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Footer Specs */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-6">
-          <div className="flex items-center gap-6">
-            <span>✓ Screenshot Vision</span>
-            <span>✓ 3 Distinct Energy Levels</span>
-            <span>✓ 15 Free Daily Credits</span>
+        {/* Bottom Footer */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4">
+          <div className="flex items-center gap-5">
+            <span>Screenshot support</span>
+            <span>·</span>
+            <span>Zero cringe filter</span>
+            <span>·</span>
+            <span>15 free daily replies</span>
           </div>
-          <span className="font-code">RIZZUP.AI</span>
+          <span className="font-code text-[11px]">RIZZUP</span>
         </div>
       </div>
 
-      {/* Right Authentication Studio (5 columns on desktop) */}
-      <div className="lg:col-span-5 flex flex-col justify-between p-6 sm:p-12 xl:p-16 bg-background">
+      {/* Right Sign-In Column — Flex Centered */}
+      <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 xl:p-10 bg-background overflow-y-auto">
         <div className="flex items-center justify-between lg:justify-end">
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <Flame className="h-4 w-4 fill-current" />
             </div>
             <span className="font-headline text-xl">RizzUp</span>
@@ -218,21 +239,17 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <div className="w-full max-w-sm mx-auto my-auto space-y-8 py-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 font-code text-[11px] uppercase tracking-widest text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              Welcome Back
-            </div>
-            <h2 className="font-headline text-4xl tracking-tight">
-              Step into the studio
+        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-6 py-4">
+          <div className="space-y-1.5">
+            <h2 className="font-headline text-3xl sm:text-4xl tracking-tight">
+              Sign in to RizzUp
             </h2>
             <p className="text-sm text-muted-foreground">
-              Sign in with Google or your email to access your wingman.
+              Continue with Google or your email below.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3.5">
             <Button
               type="button"
               variant="outline"
@@ -244,21 +261,21 @@ export default function LoginPage() {
               Continue with Google
             </Button>
 
-            <div className="relative py-2">
+            <div className="relative py-1.5">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/70" />
               </div>
               <div className="relative flex justify-center">
                 <span className="bg-background px-3 font-code text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Or with email
+                  or email
                 </span>
               </div>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="flex flex-col gap-3.5">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-medium text-foreground/85">
-                  Email address
+                  Email
                 </Label>
                 <Input
                   id="email"
@@ -268,7 +285,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="h-11 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
                 />
               </div>
 
@@ -284,25 +301,25 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-11 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all"
+                className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 transition-all mt-1"
                 disabled={isLoading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In to RizzUp'}
+                {isLoading ? 'Signing in...' : 'Sign In'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
-            Don&apos;t have an account yet?{' '}
+            No account yet?{' '}
             <Link href="/signup" className="font-semibold text-foreground hover:text-primary underline underline-offset-4">
-              Get 15 free daily credits
+              Sign up for 15 free daily replies
             </Link>
           </p>
         </div>

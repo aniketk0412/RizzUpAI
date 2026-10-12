@@ -90,26 +90,26 @@ const defaultTones: { value: Tone; label: string }[] = [
 
 const quickStarters = [
   {
-    tag: 'HINGE / OPENER',
-    prompt: 'She said: "Wait you actually know how to cook?? 👀"',
+    tag: 'Hinge · Match',
+    prompt: 'be honest did you just say you like matcha to impress me',
     relation: 'Crush' as Relation,
     tone: 'Flirty' as Tone,
   },
   {
-    tag: 'LATE NIGHT TEXT',
-    prompt: 'They texted: "I can’t sleep, entertain me"',
+    tag: 'IG DM · Late Night',
+    prompt: 'i can’t sleep, entertain me',
     relation: 'Crush' as Relation,
     tone: 'Rizz' as Tone,
   },
   {
-    tag: 'DATE LOCK-IN',
-    prompt: 'She said: "My week is kinda crazy tbh, maybe next week?"',
+    tag: 'iMessage · Reschedule',
+    prompt: 'my week is kinda crazy tbh, maybe next week?',
     relation: 'Crush' as Relation,
     tone: 'Flirty' as Tone,
   },
   {
-    tag: 'SWEET / PARTNER',
-    prompt: 'They said: "Long day at work today, I’m exhausted"',
+    tag: 'Partner · Check-in',
+    prompt: 'long day at work today i’m so drained',
     relation: 'GF' as Relation,
     tone: 'Romantic' as Tone,
   },
@@ -334,7 +334,7 @@ export default function ChatLayout() {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="flex h-dvh w-full overflow-hidden bg-background">
         <Sidebar collapsible="offcanvas" className="border-r border-border/70">
           <SidebarRail className="group-data-[state=expanded]:bg-background group-data-[state=expanded]:hover:bg-accent group-data-[state=expanded]:text-foreground">
             <ChevronLeft className="size-4 transition-transform duration-200 group-data-[state=collapsed]:rotate-180" />
@@ -446,11 +446,11 @@ export default function ChatLayout() {
 
         <SidebarOverlay />
 
-        <SidebarInset className="flex flex-col min-h-screen">
-          {/* Top Editorial Bar + Calibrator Pills */}
-          <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
-            <div className="max-w-5xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
+        <SidebarInset className="flex flex-1 flex-col h-dvh overflow-hidden">
+          {/* Top Bar + Calibrator Pills */}
+          <header className="shrink-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
+            <div className="max-w-4xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
                 <SidebarTrigger className="h-8 w-8 rounded-lg" />
                 <div className="flex items-center gap-2">
                   <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-sm">
@@ -462,7 +462,6 @@ export default function ChatLayout() {
 
               {/* Tactile Pill Selectors */}
               <div className="flex flex-wrap items-center gap-2">
-                {/* Relation Pills */}
                 <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
                   <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
                     Who:
@@ -489,7 +488,6 @@ export default function ChatLayout() {
                   })}
                 </div>
 
-                {/* Tone Pills */}
                 <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
                   <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
                     Vibe:
@@ -517,7 +515,7 @@ export default function ChatLayout() {
                 </div>
               </div>
 
-              {/* Right Actions: Credits + Theme */}
+              {/* Right Actions */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -526,7 +524,7 @@ export default function ChatLayout() {
                   className="h-8 rounded-xl border-border/80 bg-card font-code text-xs gap-1.5"
                 >
                   <span className="h-2 w-2 rounded-full bg-primary" />
-                  {credits} <span className="hidden sm:inline">CREDITS</span>
+                  {credits} <span className="hidden sm:inline">LEFT</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -540,37 +538,33 @@ export default function ChatLayout() {
             </div>
           </header>
 
-          {/* Main Workspace */}
-          <main className="flex-1 overflow-y-auto px-4 py-6">
-            <div className="max-w-4xl mx-auto space-y-8">
+          {/* Main Flex Workspace — Scrolls internally only when needed */}
+          <main className="flex-1 overflow-y-auto px-4 py-4 flex flex-col">
+            <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
               {activeSession && activeSession.messages.length > 0 ? (
-                <>
+                <div className="flex flex-col gap-6 py-2">
                   {activeSession.messages.map((message) => (
                     <ChatMessage key={message.id} message={message} />
                   ))}
                   <div ref={messagesEndRef} />
-                </>
+                </div>
               ) : (
-                /* Empty State: Editorial Launchpad with 1-Tap Scenarios */
-                <div className="py-8 sm:py-14 space-y-10">
-                  <div className="space-y-3 max-w-xl">
-                    <div className="inline-flex items-center gap-1.5 font-code text-[11px] uppercase tracking-widest text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Stateless 3-Option Wingman
-                    </div>
-                    <h1 className="font-headline text-4xl sm:text-5xl tracking-tight leading-[1.06]">
-                      What did they just <span className="italic text-primary">text you</span>?
+                /* Empty State — Flex Centered, No Page Overflow */
+                <div className="my-auto flex flex-col gap-6 py-4">
+                  <div className="space-y-2 max-w-lg">
+                    <h1 className="font-headline text-3xl sm:text-4xl tracking-tight leading-[1.06]">
+                      What did they <span className="italic text-primary">send you</span>?
                     </h1>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Paste their message below, upload a screenshot of your chat, or tap a live scenario below to test the 3-angle generator.
+                    <p className="text-sm text-muted-foreground">
+                      Paste their text below, drop a screenshot, or tap a message to test it out.
                     </p>
                   </div>
 
-                  <div className="space-y-3">
-                    <p className="font-code text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Quick-Try Scenarios (1-Tap Test)
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-muted-foreground px-0.5">
+                      Try a sample incoming text
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {quickStarters.map((item, i) => (
                         <button
                           key={i}
@@ -585,17 +579,17 @@ export default function ChatLayout() {
                             }
                             handleSendMessage(item.prompt);
                           }}
-                          className="group text-left rounded-2xl border border-border/80 bg-card hover:border-primary/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between gap-3"
+                          className="group flex items-center justify-between gap-3 text-left rounded-xl border border-border/75 bg-card/85 hover:border-primary/60 hover:bg-card px-3.5 py-3 transition-all"
                         >
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-code text-[10px] uppercase tracking-wider text-primary font-semibold">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-[11px] font-medium text-muted-foreground">
                               {item.tag}
                             </span>
-                            <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <p className="text-[13px] font-medium text-foreground truncate">
+                              “{item.prompt}”
+                            </p>
                           </div>
-                          <p className="text-sm font-medium text-foreground leading-snug">
-                            {item.prompt}
-                          </p>
+                          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
                         </button>
                       ))}
                     </div>

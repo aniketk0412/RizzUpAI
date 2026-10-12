@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Flame, ArrowRight, Sparkles, Check } from 'lucide-react';
+import { Flame, ArrowRight, Check } from 'lucide-react';
 import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,27 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     />
   </svg>
 );
+
+const vibeExamples = [
+  {
+    vibe: 'Chill',
+    dot: 'bg-emerald-400',
+    desc: 'Low-key, dry humor when you don’t want to look like you’re trying too hard.',
+    sample: '“bold of you to assume i don’t already have better plans (i don’t)”',
+  },
+  {
+    vibe: 'Smooth',
+    dot: 'bg-primary',
+    desc: 'Confident push-pull that keeps the conversation moving forward.',
+    sample: '“you’re trouble. pick a spot for thursday and i’ll co-sign”',
+  },
+  {
+    vibe: 'Bold',
+    dot: 'bg-amber-400',
+    desc: 'Direct, flirty lines that skip the boring small talk and set up the link.',
+    sample: '“skip the texting marathon, let’s grab drinks tomorrow at 8”',
+  },
+];
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -57,7 +78,7 @@ export default function SignupPage() {
 
       toast({
         title: 'Welcome to RizzUp!',
-        description: 'Your 15 free daily credits are ready.',
+        description: 'Your 15 free daily replies are ready.',
       });
 
       router.push('/');
@@ -94,72 +115,78 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground grid lg:grid-cols-12">
-      {/* Left Editorial Showcase */}
-      <div className="hidden lg:flex lg:col-span-7 flex-col justify-between p-12 xl:p-16 border-r border-border/70 relative overflow-hidden bg-gradient-to-br from-background via-card to-background">
+    <div className="flex min-h-dvh lg:h-dvh lg:overflow-hidden w-full bg-background text-foreground">
+      {/* Left Showcase Panel — Locked Flex Column */}
+      <div className="hidden lg:flex lg:w-[55%] xl:w-[57%] flex-col justify-between p-8 xl:p-10 border-r border-border/60 relative overflow-hidden bg-gradient-to-b from-background via-card/40 to-background">
         <div
-          className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full opacity-20 blur-3xl"
+          className="pointer-events-none absolute -bottom-36 -right-36 h-80 w-80 rounded-full opacity-15 blur-3xl"
           style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
         />
 
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/25">
-              <Flame className="h-5 w-5 fill-current" />
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-md shadow-primary/20">
+              <Flame className="h-4 w-4 fill-current" />
             </div>
             <span className="font-headline text-2xl tracking-tight">RizzUp</span>
-            <span className="font-code text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full border border-primary/30 text-primary bg-primary/10">
-              v2.5 Studio
-            </span>
           </div>
-          <span className="font-code text-xs text-muted-foreground">
-            15 CREDITS / DAY INCLUDED
+          <span className="text-xs text-muted-foreground font-medium">
+            15 free replies every day
           </span>
         </div>
 
-        <div className="relative z-10 max-w-xl my-auto space-y-8">
-          <div className="space-y-3">
-            <p className="font-code text-xs uppercase tracking-[0.2em] text-primary">
-              Your Unfair Advantage
-            </p>
-            <h1 className="font-headline text-5xl xl:text-6xl leading-[1.03] tracking-tight">
-              Three tailored lines for <span className="italic text-primary">every situation</span>.
+        <div className="relative z-10 flex flex-col gap-6 max-w-xl my-auto">
+          <div className="space-y-2.5">
+            <h1 className="font-headline text-4xl xl:text-5xl leading-[1.04] tracking-tight">
+              Three angles for <span className="italic text-primary">every text</span>.
             </h1>
-            <p className="text-muted-foreground text-base leading-relaxed max-w-md">
-              Whether you’re breaking the ice on Hinge, replying to a late-night story, or keeping the spark alive—pick the exact energy you want in one tap.
+            <p className="text-muted-foreground text-sm leading-relaxed max-w-md">
+              Stop staring at the typing indicator. Get three distinct replies tailored to who you’re texting and how bold you want to play it.
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { num: '01', title: 'The Tease', desc: 'Low-pressure playful banter that’s effortless to reply to.' },
-              { num: '02', title: 'Smooth', desc: 'Confident, charming, and naturally magnetic.' },
-              { num: '03', title: 'High Voltage', desc: 'Bold, witty lines that cut through boring small talk.' },
-            ].map((item) => (
-              <div key={item.num} className="rounded-xl border border-border/80 bg-card/70 p-4 space-y-2">
-                <span className="font-code text-xs text-primary font-semibold">{item.num}</span>
-                <h3 className="font-headline text-xl">{item.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+          <div className="flex flex-col gap-2.5">
+            {vibeExamples.map((item) => (
+              <div
+                key={item.vibe}
+                className="flex flex-col gap-1.5 rounded-2xl border border-border/75 bg-card/80 p-3.5"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">
+                    <span className={`h-1.5 w-1.5 rounded-full ${item.dot}`} />
+                    {item.vibe}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{item.desc}</span>
+                </div>
+                <p className="text-[13px] font-medium text-foreground/95 pl-1">
+                  {item.sample}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-6">
-          <div className="flex items-center gap-6">
-            <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Free Daily Refills</span>
-            <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Screenshot Vision</span>
-            <span className="inline-flex items-center gap-1"><Check className="h-3.5 w-3.5 text-primary" /> Instant One-Tap Copy</span>
+        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4">
+          <div className="flex items-center gap-5">
+            <span className="inline-flex items-center gap-1">
+              <Check className="h-3.5 w-3.5 text-primary" /> Daily refill included
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Check className="h-3.5 w-3.5 text-primary" /> Screenshot reading
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Check className="h-3.5 w-3.5 text-primary" /> One-tap copy
+            </span>
           </div>
-          <span className="font-code">RIZZUP.AI</span>
+          <span className="font-code text-[11px]">RIZZUP</span>
         </div>
       </div>
 
-      {/* Right Signup Form */}
-      <div className="lg:col-span-5 flex flex-col justify-between p-6 sm:p-12 xl:p-16 bg-background">
+      {/* Right Signup Column */}
+      <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 xl:p-10 bg-background overflow-y-auto">
         <div className="flex items-center justify-between lg:justify-end">
           <div className="flex items-center gap-2 lg:hidden">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+            <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
               <Flame className="h-4 w-4 fill-current" />
             </div>
             <span className="font-headline text-xl">RizzUp</span>
@@ -168,51 +195,47 @@ export default function SignupPage() {
             href="/login"
             className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
-            Already a member? <span className="text-primary underline underline-offset-4">Sign in →</span>
+            Already have an account? <span className="text-primary underline underline-offset-4">Sign in →</span>
           </Link>
         </div>
 
-        <div className="w-full max-w-sm mx-auto my-auto space-y-7 py-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 font-code text-[11px] uppercase tracking-widest text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              15 Free Daily Credits
-            </div>
-            <h2 className="font-headline text-4xl tracking-tight">
+        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-5 py-4">
+          <div className="space-y-1">
+            <h2 className="font-headline text-3xl sm:text-4xl tracking-tight">
               Create your account
             </h2>
             <p className="text-sm text-muted-foreground">
-              Start generating 3-option replies in seconds.
+              Includes 15 free replies every 24 hours.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3">
             <Button
               type="button"
               variant="outline"
-              className="w-full h-11 rounded-xl border-border bg-card hover:bg-accent/60 text-foreground font-medium transition-all"
+              className="w-full h-10 rounded-xl border-border bg-card hover:bg-accent/60 text-foreground font-medium transition-all"
               onClick={handleGoogleSignUp}
               disabled={isLoading}
             >
               <GoogleIcon className="mr-2.5 h-4 w-4" />
-              Sign up with Google
+              Continue with Google
             </Button>
 
-            <div className="relative py-2">
+            <div className="relative py-1">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border/70" />
               </div>
               <div className="relative flex justify-center">
                 <span className="bg-background px-3 font-code text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Or with email
+                  or email
                 </span>
               </div>
             </div>
 
-            <form onSubmit={handleSignup} className="space-y-3.5">
-              <div className="space-y-1.5">
+            <form onSubmit={handleSignup} className="flex flex-col gap-3">
+              <div className="space-y-1">
                 <Label htmlFor="email" className="text-xs font-medium text-foreground/85">
-                  Email address
+                  Email
                 </Label>
                 <Input
                   id="email"
@@ -222,13 +245,13 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="h-11 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="password" className="text-xs font-medium text-foreground/85">
-                  Password (min. 8 chars)
+                  Password (min. 8 characters)
                 </Label>
                 <Input
                   id="password"
@@ -239,13 +262,13 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-11 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="confirm-password" className="text-xs font-medium text-foreground/85">
-                  Confirm Password
+                  Confirm password
                 </Label>
                 <Input
                   id="confirm-password"
@@ -256,16 +279,16 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-11 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-11 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all mt-2"
+                className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 transition-all mt-1"
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating Account...' : 'Unlock Your Wingman'}
+                {isLoading ? 'Creating account...' : 'Create Account'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
