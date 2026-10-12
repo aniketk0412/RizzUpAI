@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 import { Flame, ArrowRight, Sparkles, Check } from 'lucide-react';
+import { authClient } from '@/lib/auth/client';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,27 +47,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const result = await signIn('credentials', {
-        email,
+      const { error } = await authClient.signIn.email({
+        email: email.trim(),
         password,
-        redirect: false,
       });
 
-      if (result?.error) {
+      if (error) {
         toast({
           title: 'Login Failed',
-          description: 'Invalid email or password.',
+          description: error.message || 'Invalid email or password.',
           variant: 'destructive',
         });
       } else {
+        await refreshProfile();
         router.push('/');
-        router.refresh();
       }
     } catch (error: any) {
       toast({
@@ -82,7 +83,18 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/' });
+      const { error } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/',
+      });
+      if (error) {
+        toast({
+          title: 'Google Sign-In Failed',
+          description: error.message || 'Could not start Google Sign-In.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+      }
     } catch (error: any) {
       toast({
         title: 'Google Sign-In Failed',

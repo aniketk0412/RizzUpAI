@@ -1,45 +1,9 @@
 'use server';
 
-import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
 import { db, isDatabaseConfigured } from '@/db';
 import { users } from '@/db/schema';
 import { auth } from '@/auth';
-
-export async function registerUser(email: string, password: string) {
-  if (!isDatabaseConfigured()) {
-    throw new Error(
-      'DATABASE_URL is not configured yet. Please add your Neon Postgres URL to .env.local and run `npm run db:push`.'
-    );
-  }
-
-  const normalizedEmail = email.toLowerCase().trim();
-  if (!normalizedEmail || password.length < 6) {
-    throw new Error('Please provide a valid email and a password of at least 6 characters.');
-  }
-
-  const existing = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, normalizedEmail))
-    .limit(1);
-
-  if (existing.length > 0) {
-    throw new Error('An account with this email already exists.');
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  await db.insert(users).values({
-    email: normalizedEmail,
-    name: normalizedEmail.split('@')[0],
-    passwordHash,
-    credits: 15,
-    creditResetTimestamp: null,
-  });
-
-  return { success: true };
-}
 
 export async function getUserProfile() {
   const session = await auth();
@@ -47,7 +11,7 @@ export async function getUserProfile() {
     return null;
   }
 
-  const [userRecord] = await db
+  let [userRecord] = await db
     .select({
       id: users.id,
       email: users.email,
@@ -59,6 +23,39 @@ export async function getUserProfile() {
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1);
+
+  // Auto-provision user in our credits table on first Google / Email sign-in
+  if (!userRecord && session.user.email) {
+    const [existingByEmail] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, session.user.email.toLowerCase()))
+      .limit(1);
+
+    if (existingByEmail) {
+      userRecord = existingByEmail;
+    } else {
+      const [inserted] = await db
+        .insert(users)
+        .values({
+          id: session.user.id,
+          email: session.user.email.toLowerCase(),
+          name: session.user.name || session.user.email.split('@')[0],
+          image: session.user.image || null,
+          credits: 15,
+          creditResetTimestamp: null,
+        })
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          image: users.image,
+          credits: users.credits,
+          creditResetTimestamp: users.creditResetTimestamp,
+        });
+      userRecord = inserted;
+    }
+  }
 
   if (!userRecord) {
     return null;
@@ -109,4 +106,3 @@ export async function resetDevCredits(amount = 10000) {
 
   return { credits: amount };
 }
-

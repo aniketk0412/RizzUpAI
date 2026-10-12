@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 import { Flame, ArrowRight, Sparkles, Check } from 'lucide-react';
-import { registerUser } from '@/actions/user-actions';
+import { authClient } from '@/lib/auth/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,25 +39,29 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
-      await registerUser(email, password);
-
-      const signInResult = await signIn('credentials', {
+      const displayName = email.split('@')[0] || 'Rizzler';
+      const { error } = await authClient.signUp.email({
         email,
         password,
-        redirect: false,
+        name: displayName,
       });
+
+      if (error) {
+        toast({
+          title: 'Signup Failed',
+          description: error.message || 'Could not create account.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       toast({
         title: 'Welcome to RizzUp!',
         description: 'Your 15 free daily credits are ready.',
       });
 
-      if (!signInResult?.error) {
-        router.push('/');
-        router.refresh();
-      } else {
-        router.push('/login');
-      }
+      router.push('/');
+      router.refresh();
     } catch (error: any) {
       toast({
         title: 'Signup Failed',
@@ -73,7 +76,13 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/' });
+      const { error } = await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: '/',
+      });
+      if (error) {
+        throw new Error(error.message || 'Could not start Google Sign-In.');
+      }
     } catch (error: any) {
       toast({
         title: 'Google Sign-Up Failed',
@@ -219,14 +228,14 @@ export default function SignupPage() {
 
               <div className="space-y-1.5">
                 <Label htmlFor="password" className="text-xs font-medium text-foreground/85">
-                  Password (min. 6 chars)
+                  Password (min. 8 chars)
                 </Label>
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -243,7 +252,7 @@ export default function SignupPage() {
                   type="password"
                   placeholder="••••••••"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
