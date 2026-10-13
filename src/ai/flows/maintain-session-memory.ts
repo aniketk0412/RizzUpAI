@@ -5,7 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import { generateStructuredJSON } from '@/ai/gemini';
 import { db, isDatabaseConfigured } from '@/db';
 import { users } from '@/db/schema';
-import type { ReplyOption } from '@/types';
+import type { ReplyOption, SubtextAnalysis } from '@/types';
 
 export interface MaintainSessionMemoryInput {
   relation: string;
@@ -13,12 +13,14 @@ export interface MaintainSessionMemoryInput {
   currentMessage: string;
   userId: string;
   image?: string;
+  spicier?: boolean;
 }
 
 export interface MaintainSessionMemoryOutput {
   response: string;
   explanation: string;
   options: ReplyOption[];
+  subtextAnalysis?: SubtextAnalysis;
   remainingCredits?: number;
   error?: string;
 }
@@ -47,6 +49,9 @@ export async function maintainSessionMemory(
       }
     }
 
+    const isGhosted = input.tone === 'Ghosted';
+    const isSpicier = Boolean(input.spicier);
+
     const systemInstruction = `You are RizzUp, the world's most socially calibrated texting wingman. You write magnetic, effortless text replies for real conversations on iMessage, Instagram DMs, Hinge, and Tinder.
 
 ABSOLUTE MANDATES:
@@ -54,7 +59,8 @@ ABSOLUTE MANDATES:
 2. TEXTING REALISM: Real texts are brief (4 to 16 words max). Use natural lowercase or casual capitalization. Avoid stuffy formal punctuation (no semicolons, no textbook periods ending single-sentence casual texts).
 3. SUBTEXT OVER EXPLAINING: Confident texters don't over-explain jokes or seek approval. Use playful misdirection, push-pull banter, and understated confidence.
 4. MAXIMUM 1 EMOJI: 0 or 1 natural emoji max (like 👀, 💀, 😭, 😌, 😏). Never spam heart-eyes or corny emojis.
-5. STRICTLY BANNED CLICHÉS:
+5. DECODE THE SUBTEXT: Read the psychological subtext of what they sent (shit-test, genuine curiosity, low-effort check-in, dry text, or flirty bait).
+6. STRICTLY BANNED CLICHÉS:
    - "partner in crime"
    - "strict NDA"
    - "vodka rigatoni"
@@ -79,16 +85,33 @@ CALIBRATION ANCHORS:
 - Corporate AI Slop: "No worries at all! Life gets so busy. Let me know when you're free next week."
   -> Real Rizz: "all good, don't work too hard" or "sounds like a deal, don't disappear on me"
 
-Return strictly valid JSON matching { response, explanation, options: [{ label, text, vibeReason }] }.`;
+Return strictly valid JSON matching {
+  response: string,
+  explanation: string,
+  subtextAnalysis: { dynamic: string, subtext: string, powerBalance: "Their court" | "Balanced" | "Your court" },
+  options: [{ label: string, text: string, vibeReason: string }]
+}.`;
 
-    const promptText = `Generate 3 distinct, ready-to-send text replies for this situation:
+    const promptText = `Generate 3 distinct, ready-to-send text replies and a tactical subtext decode for this situation:
 
 SITUATION:
 - Who they are: ${input.relation}
-- Selected Vibe: ${input.tone}
+- Selected Vibe: ${input.tone}${isSpicier ? ' (🔥 SPICIER / MAXIMUM HEAT MODE)' : ''}
 - Context / Their Text: "${input.currentMessage || 'Analyze the attached screenshot and craft 3 tactical replies.'}"
 
-TONE SPECIFICS:
+${
+  isGhosted
+    ? `SPECIAL PROTOCOL: EMERGENCY REVIVE / ANTI-GHOSTING
+The other person has gone silent, left on read, or gave a dead dry text ('k', 'haha', 'cool').
+RULES:
+- Zero needy energy (no 'still alive?', no 'did you forget about me', no double-text guilt).
+- Option 1 (Playful Tease): Call out the radio silence with effortless, dry humor.
+- Option 2 (Intrigue Hook): A random funny observation or cliffhanger that compels an immediate reply.
+- Option 3 (Unbothered Reframe): Complete frame flip with high-status nonchalance.`
+    : isSpicier
+    ? `SPECIAL PROTOCOL: SPICIER / MAXIMUM BOLD RE-ROLL
+Turn the confidence and flirtatious tension up to 10. Give 3 punchy, audacious, magnetic alternatives with razor-sharp wit and electric tension.`
+    : `TONE SPECIFICS:
 ${
   input.tone === 'Rizz'
     ? '- Tone = High Rizz: High-status nonchalance, witty push-pull, magnetic banter that makes them qualify themselves. Unbothered, intriguing, zero try-hard energy.'
@@ -97,10 +120,11 @@ ${
     : input.tone === 'Romantic'
     ? '- Tone = Romantic: Understated charm, genuine warmth, magnetic attraction without being sappy or stiff.'
     : '- Tone = Playful: Dry wit, inside-joke energy, hilarious banter with zero awkwardness.'
+}`
 }
 
 RELATION DYNAMICS:
-- Target is "${input.relation}". Calibrate the familiarity and boundaries accordingly.
+- Target is "${input.relation}". Calibrate familiarity and boundaries.
 
 THE 3 DISTINCT PLAYBOOK ANGLES:
 1. Option 1 ("Chill"): Dry humor, playful tease, or low-investment banter. Unbothered cool.
@@ -108,10 +132,14 @@ THE 3 DISTINCT PLAYBOOK ANGLES:
 3. Option 3 ("Bold"): High-conviction spark, direct flirting, or seamlessly locking in the date/hangout without desperation.
 
 OUTPUT REQUIREMENTS:
-- "response": The single best reply from the 3 options.
-- "explanation": Ultra-concise 5-8 word tactical read (e.g., "Playful reframe flips the frame").
-- "options": Array of 3 objects with { "label": "Chill" | "Smooth" | "Bold", "text": "...", "vibeReason": "4-6 word reason" }.
-- Each "text" MUST be under 18 words and sound like a real person typing on their phone right now.`;
+- "response": Top recommended reply.
+- "explanation": Concise 5-8 word tactical read.
+- "subtextAnalysis":
+  - "dynamic": Short 2-4 word diagnosis (e.g. "Playful Shit-Test", "Low-Investment Check-In", "Flirty Deflection", "Curiosity Bait", "Radio Silence").
+  - "subtext": 1 sharp sentence revealing what they actually mean beneath the surface.
+  - "powerBalance": "Their court", "Balanced", or "Your court".
+- "options": Array of 3 objects with { label, text, vibeReason }.
+- Each "text" MUST be under 18 words and sound like a real person typing on iMessage right now.`;
 
     const result = await generateStructuredJSON({
       prompt: promptText,
@@ -127,6 +155,24 @@ OUTPUT REQUIREMENTS:
           explanation: {
             type: Type.STRING,
             description: 'Brief 1-sentence strategic takeaway.',
+          },
+          subtextAnalysis: {
+            type: Type.OBJECT,
+            properties: {
+              dynamic: {
+                type: Type.STRING,
+                description: 'Short 2-4 word tag: e.g. "Playful Shit-Test", "Low-Investment Bait", "Curious Tease"',
+              },
+              subtext: {
+                type: Type.STRING,
+                description: 'One crisp sentence explaining the psychological subtext of what they sent.',
+              },
+              powerBalance: {
+                type: Type.STRING,
+                description: '"Their court", "Balanced", or "Your court"',
+              },
+            },
+            required: ['dynamic', 'subtext', 'powerBalance'],
           },
           options: {
             type: Type.ARRAY,
@@ -151,7 +197,7 @@ OUTPUT REQUIREMENTS:
             },
           },
         },
-        required: ['response', 'explanation', 'options'],
+        required: ['response', 'explanation', 'subtextAnalysis', 'options'],
       },
     });
 
@@ -195,6 +241,7 @@ OUTPUT REQUIREMENTS:
       response: output.response || options[1]?.text || options[0]?.text,
       explanation: output.explanation || 'Pick the line that fits your move:',
       options,
+      subtextAnalysis: output.subtextAnalysis || undefined,
       remainingCredits,
     };
   } catch (e: any) {

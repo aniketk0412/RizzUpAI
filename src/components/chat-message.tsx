@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Copy, Check, RotateCw, Pencil, Trash2, X, ArrowUpRight } from 'lucide-react';
+import { Copy, Check, RotateCw, Pencil, Trash2, X, ArrowUpRight, Zap, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ interface ChatMessageProps {
   onResend?: (text: string, image?: string) => void;
   onEdit?: (messageId: string, newText: string) => void;
   onDelete?: (messageId: string) => void;
+  onReroll?: (messageId: string, spicier?: boolean) => void;
 }
 
 const vibeMeta = [
@@ -47,6 +48,7 @@ export default function ChatMessage({
   onResend,
   onEdit,
   onDelete,
+  onReroll,
 }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -215,15 +217,66 @@ export default function ChatMessage({
       {/* 3-Card Reply Deck */}
       {hasOptions && !message.isProcessing && (
         <div className="flex flex-col gap-3 w-full animate-reveal-up">
-          {/* Deck Strategy Header */}
-          <div className="flex items-center justify-between px-1">
+          {/* 1. Subtext & Red Flag Decoder Card */}
+          {message.subtextAnalysis && (
+            <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.08] via-card to-card p-3.5 sm:p-4 shadow-sm animate-reveal-up">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-border/50 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-primary/20 text-primary">
+                    <Zap className="h-3 w-3 fill-primary" />
+                  </span>
+                  <span className="text-[11px] font-bold tracking-wider uppercase text-foreground">
+                    Subtext Decoder
+                  </span>
+                  <span className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                    {message.subtextAnalysis.dynamic}
+                  </span>
+                </div>
+                {message.subtextAnalysis.powerBalance && (
+                  <span className="font-code text-[10px] text-muted-foreground bg-muted/70 border border-border/60 px-2 py-0.5 rounded-md">
+                    Framing: <strong className="text-foreground">{message.subtextAnalysis.powerBalance}</strong>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-foreground/90 font-medium leading-relaxed">
+                {message.subtextAnalysis.subtext}
+              </p>
+            </div>
+          )}
+
+          {/* 2. Deck Strategy Header + "Spicier 🔥" / "Re-Roll" Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="font-semibold text-foreground">Wingman Strategy:</span>
               <span>{message.explanation || 'Pick the angle that matches your play.'}</span>
             </div>
-            <span className="font-code text-[10px] text-muted-foreground/70 hidden sm:inline">
-              TAP CARD TO COPY
-            </span>
+
+            {onReroll && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  title="Generate 3 higher-voltage, bold lines"
+                  onClick={() => onReroll(message.id, true)}
+                  className="h-7 px-2.5 rounded-xl border-amber-500/35 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 font-semibold text-xs gap-1.5 smooth-interactive shadow-sm"
+                >
+                  <Flame className="h-3.5 w-3.5 fill-amber-500" />
+                  <span>Make it Spicier 🔥</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  title="Generate 3 fresh angles"
+                  onClick={() => onReroll(message.id, false)}
+                  className="h-7 px-2 rounded-xl text-xs text-muted-foreground hover:text-foreground gap-1 smooth-interactive"
+                >
+                  <RotateCw className="h-3 w-3" />
+                  <span className="hidden sm:inline">Re-roll</span>
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* 3 Interactive Cards (Chill / Smooth / Bold) */}

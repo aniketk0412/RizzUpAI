@@ -8,7 +8,7 @@ import {
   bigint,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
-import type { ReplyOption, Relation, Tone, Sender } from '@/types';
+import type { ReplyOption, Relation, Tone, Sender, SubtextAnalysis } from '@/types';
 
 export const users = pgTable('users', {
   id: text('id')
@@ -97,6 +97,7 @@ export const chatMessages = pgTable('chat_messages', {
   image: text('image'),
   explanation: text('explanation'),
   options: jsonb('options').$type<ReplyOption[]>(),
+  subtextAnalysis: jsonb('subtext_analysis').$type<SubtextAnalysis>(),
   selectedOptionIndex: integer('selected_option_index'),
   createdAt: bigint('created_at', { mode: 'number' })
     .notNull()

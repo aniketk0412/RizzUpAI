@@ -1,6 +1,12 @@
 export type Sender = 'user' | 'ai';
 export type Relation = 'Crush' | 'GF' | 'BF' | 'Friend';
-export type Tone = 'Friendly' | 'Flirty' | 'Rizz' | 'Romantic';
+export type Tone = 'Friendly' | 'Flirty' | 'Rizz' | 'Romantic' | 'Ghosted';
+
+export interface SubtextAnalysis {
+  dynamic: string;
+  subtext: string;
+  powerBalance: 'Their court' | 'Balanced' | 'Your court';
+}
 
 export interface ReplyOption {
   label: string;
@@ -15,6 +21,7 @@ export interface Message {
   image?: string; // data URI
   isProcessing?: boolean;
   explanation?: string;
+  subtextAnalysis?: SubtextAnalysis;
   options?: ReplyOption[];
   selectedOptionIndex?: number;
 }

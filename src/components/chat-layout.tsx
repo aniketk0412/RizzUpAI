@@ -70,6 +70,7 @@ import {
   updateDbChatSession,
   deleteDbChatSession,
   saveDbChatMessage,
+  updateDbAiMessage,
   deleteDbChatMessage,
 } from '@/actions/chat-actions';
 import { cn } from '@/lib/utils';
@@ -86,9 +87,16 @@ const defaultTones: { value: Tone; label: string }[] = [
   { value: 'Rizz', label: 'High Rizz' },
   { value: 'Romantic', label: 'Romantic' },
   { value: 'Friendly', label: 'Playful' },
+  { value: 'Ghosted', label: '👻 Emergency Revive' },
 ];
 
 const quickStarters = [
+  {
+    tag: 'Ghosted · Revive',
+    prompt: 'they left me on read 3 days ago after a great date',
+    relation: 'Crush' as Relation,
+    tone: 'Ghosted' as Tone,
+  },
   {
     tag: 'Hinge · Match',
     prompt: 'be honest did you just say you like matcha to impress me',
@@ -277,6 +285,7 @@ export default function ChatLayout() {
           text: response.options?.[defaultOptionIndex]?.text || response.response,
           sender: 'ai',
           explanation: response.explanation,
+          subtextAnalysis: response.subtextAnalysis,
           options: response.options,
         };
 
@@ -312,6 +321,115 @@ export default function ChatLayout() {
       handleSendMessage(text, image);
     },
     [handleSendMessage]
+  );
+
+  const handleReroll = useCallback(
+    async (aiMessageId: string, spicier: boolean = false) => {
+      if (!activeSession || !user) return;
+      if (credits <= 0) {
+        setIsCreditDialogOpen(true);
+        return;
+      }
+
+      const msgIndex = activeSession.messages.findIndex((m) => m.id === aiMessageId);
+      if (msgIndex === -1) return;
+
+      // Find the user context message that came before this AI message
+      const userMessage = activeSession.messages
+        .slice(0, msgIndex)
+        .reverse()
+        .find((m) => m.sender === 'user');
+
+      if (!userMessage) return;
+
+      // Put the AI message in processing state
+      setSessions((prev) =>
+        prev.map((s) => {
+          if (s.id === activeSession.id) {
+            return {
+              ...s,
+              messages: s.messages.map((m) =>
+                m.id === aiMessageId ? { ...m, isProcessing: true } : m
+              ),
+            };
+          }
+          return s;
+        })
+      );
+
+      try {
+        const response = await maintainSessionMemory({
+          relation: activeSession.relation,
+          tone: activeSession.tone,
+          currentMessage: userMessage.text,
+          userId: user.uid,
+          image: userMessage.image,
+          spicier,
+        });
+
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        if (typeof response.remainingCredits === 'number') {
+          updateLocalCredits(response.remainingCredits);
+        } else {
+          updateLocalCredits(Math.max(0, credits - 1));
+        }
+
+        const defaultOptionIndex = response.options && response.options.length > 1 ? 1 : 0;
+        const updatedAiMessage: Message = {
+          id: aiMessageId,
+          text: response.options?.[defaultOptionIndex]?.text || response.response,
+          sender: 'ai',
+          explanation: response.explanation,
+          subtextAnalysis: response.subtextAnalysis,
+          options: response.options,
+          isProcessing: false,
+        };
+
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id === activeSession.id) {
+              return {
+                ...s,
+                messages: s.messages.map((m) =>
+                  m.id === aiMessageId ? updatedAiMessage : m
+                ),
+              };
+            }
+            return s;
+          })
+        );
+
+        updateDbAiMessage(aiMessageId, {
+          text: updatedAiMessage.text,
+          explanation: updatedAiMessage.explanation,
+          subtextAnalysis: updatedAiMessage.subtextAnalysis,
+          options: updatedAiMessage.options,
+        }).catch(() => {});
+      } catch (error: any) {
+        toast({
+          title: 'Failed to re-roll',
+          description: error.message || 'An error occurred while generating alternatives.',
+          variant: 'destructive',
+        });
+        setSessions((prev) =>
+          prev.map((s) => {
+            if (s.id === activeSession.id) {
+              return {
+                ...s,
+                messages: s.messages.map((m) =>
+                  m.id === aiMessageId ? { ...m, isProcessing: false } : m
+                ),
+              };
+            }
+            return s;
+          })
+        );
+      }
+    },
+    [activeSession, user, credits, setSessions, updateLocalCredits, toast]
   );
 
   const handleEditMessage = useCallback(
@@ -602,6 +720,7 @@ export default function ChatLayout() {
                       onResend={handleResendMessage}
                       onEdit={handleEditMessage}
                       onDelete={handleDeleteMessage}
+                      onReroll={handleReroll}
                     />
                   ))}
                   <div ref={messagesEndRef} />

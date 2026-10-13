@@ -42,6 +42,7 @@ export async function fetchUserSessions(): Promise<ChatSession[] | null> {
         text: m.text,
         image: m.image ?? undefined,
         explanation: m.explanation ?? undefined,
+        subtextAnalysis: m.subtextAnalysis ?? undefined,
         options: m.options ?? undefined,
         selectedOptionIndex: m.selectedOptionIndex ?? undefined,
       })),
@@ -108,10 +109,29 @@ export async function saveDbChatMessage(sessionId: string, message: Message) {
     text: message.text,
     image: message.image ?? null,
     explanation: message.explanation ?? null,
+    subtextAnalysis: message.subtextAnalysis ?? null,
     options: message.options ?? null,
     selectedOptionIndex: message.selectedOptionIndex ?? null,
     createdAt: Date.now(),
   });
+}
+
+export async function updateDbAiMessage(
+  messageId: string,
+  updates: {
+    text?: string;
+    explanation?: string;
+    subtextAnalysis?: any;
+    options?: any;
+  }
+) {
+  const session = await auth();
+  if (!session?.user?.id || !isDatabaseConfigured()) return;
+
+  await db
+    .update(chatMessages)
+    .set(updates)
+    .where(eq(chatMessages.id, messageId));
 }
 
 export async function deleteDbChatMessage(messageId: string) {
