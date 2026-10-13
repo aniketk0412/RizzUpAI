@@ -38,18 +38,18 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     setCopiedIndex(index);
     setTimeout(() => {
       setCopiedIndex(null);
-    }, 2000);
+    }, 2200);
   };
 
   const hasOptions = !isUser && message.options && message.options.length > 0;
 
   if (isUser) {
     return (
-      <div className="flex flex-col items-end w-full gap-1">
+      <div className="flex flex-col items-end w-full gap-1 animate-reveal-up">
         <span className="text-[11px] text-muted-foreground px-1">
           Their message
         </span>
-        <div className="max-w-lg rounded-2xl rounded-tr-sm px-4 py-2.5 space-y-2 bg-secondary text-secondary-foreground border border-border/70">
+        <div className="max-w-lg rounded-2xl rounded-tr-sm px-4 py-2.5 space-y-2 bg-secondary text-secondary-foreground border border-border/70 smooth-interactive">
           {message.image && (
             <Image
               src={message.image}
@@ -73,7 +73,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     <div className="flex flex-col w-full gap-2.5">
       {/* Processing State */}
       {message.isProcessing && (
-        <div className="flex flex-col gap-2.5 w-full">
+        <div className="flex flex-col gap-2.5 w-full animate-reveal-fade">
           <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             <span>Writing 3 angles...</span>
@@ -82,7 +82,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card px-4 py-3.5"
+                style={{ animationDelay: `${i * 120}ms` }}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card px-4 py-3.5 animate-reveal-up"
               >
                 <div className="flex items-center gap-3 flex-1">
                   <Skeleton className="h-6 w-16 rounded-lg shrink-0" />
@@ -98,10 +99,10 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         </div>
       )}
 
-      {/* 3-Reply Flex Stack */}
+      {/* 3-Reply Flex Stack with Slow Staggered Entrance */}
       {hasOptions && !message.isProcessing && (
         <div className="flex flex-col gap-2 w-full">
-          <div className="flex items-center justify-between px-1">
+          <div className="flex items-center justify-between px-1 animate-reveal-up">
             <span className="text-xs text-muted-foreground">
               {message.explanation || 'Tap any line to copy'}
             </span>
@@ -118,14 +119,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               return (
                 <div
                   key={idx}
+                  style={{ animationDelay: `${100 + idx * 160}ms` }}
                   onClick={() => handleCopy(option.text, idx)}
                   className={cn(
-                    'group cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border/75 bg-card/90 px-4 py-3.5 transition-all duration-150 hover:border-primary/60 hover:bg-card',
+                    'group cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border/75 bg-card/90 px-4 py-3.5 animate-reveal-up smooth-interactive hover:border-primary/60 hover:bg-card hover:-translate-y-0.5 hover:shadow-lg',
                     isCopied && meta.activeRing
                   )}
                 >
                   <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <span className="inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-secondary border border-border/60 px-2.5 py-1 text-xs font-medium text-foreground mt-0.5">
+                    <span className="inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-secondary border border-border/60 px-2.5 py-1 text-xs font-medium text-foreground mt-0.5 smooth-interactive group-hover:border-primary/40">
                       <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
                       {option.label || meta.defaultLabel}
                     </span>
@@ -149,9 +151,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                       handleCopy(option.text, idx);
                     }}
                     className={cn(
-                      'shrink-0 self-end sm:self-center inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all',
+                      'shrink-0 self-end sm:self-center inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium smooth-interactive',
                       isCopied
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-emerald-500 text-white scale-105'
                         : 'bg-secondary text-muted-foreground group-hover:text-foreground group-hover:bg-accent'
                     )}
                   >
@@ -176,7 +178,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
 
       {/* Fallback single message */}
       {!hasOptions && !message.isProcessing && (
-        <div className="max-w-lg rounded-2xl rounded-tl-sm p-3.5 bg-card border border-border">
+        <div className="max-w-lg rounded-2xl rounded-tl-sm p-3.5 bg-card border border-border animate-reveal-up">
           <p className="whitespace-pre-wrap text-sm leading-snug">{message.text}</p>
         </div>
       )}

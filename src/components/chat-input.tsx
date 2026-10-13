@@ -58,10 +58,10 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
   };
 
   return (
-    <div className="shrink-0 w-full border-t border-border/70 bg-background/90 backdrop-blur-md px-4 py-3">
+    <div className="shrink-0 w-full border-t border-border/70 bg-background/90 backdrop-blur-md px-4 py-3 animate-reveal-up delay-200">
       <div className="max-w-3xl mx-auto">
         {image && (
-          <div className="mb-2 inline-flex items-center gap-3 rounded-xl border border-border bg-card p-1.5 pr-3">
+          <div className="mb-2 inline-flex items-center gap-3 rounded-xl border border-border bg-card p-1.5 pr-3 animate-reveal-up">
             <Image
               src={image.preview}
               alt="Screenshot preview"
@@ -75,7 +75,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             <Button
               size="icon"
               variant="ghost"
-              className="h-6 w-6 rounded-full hover:bg-destructive/15 hover:text-destructive"
+              className="h-6 w-6 rounded-full hover:bg-destructive/15 hover:text-destructive smooth-interactive"
               onClick={() => setImage(null)}
             >
               <X className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
         <div
           className={cn(
-            'relative flex items-end gap-1.5 rounded-2xl border border-border/85 bg-card p-1.5 shadow-md transition-all focus-within:border-primary/60',
+            'relative flex items-end gap-1.5 rounded-2xl border border-border/85 bg-card p-1.5 shadow-md smooth-interactive focus-within:border-primary/60 focus-within:shadow-lg focus-within:shadow-primary/5',
             isListening && 'ring-2 ring-primary border-primary'
           )}
         >
@@ -104,7 +104,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             title="Upload chat screenshot"
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending}
-            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0"
+            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 smooth-interactive"
           >
             <ImagePlus className="h-4 w-4" />
           </Button>
@@ -117,7 +117,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             onClick={toggleListening}
             disabled={isSending}
             className={cn(
-              'h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 transition-colors',
+              'h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 smooth-interactive',
               isListening && 'text-primary bg-primary/10'
             )}
           >
@@ -135,7 +135,7 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full resize-none border-0 bg-transparent py-2 px-1 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[36px]"
+            className="w-full resize-none border-0 bg-transparent py-2 px-1 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[36px] smooth-interactive"
             disabled={isSending}
           />
 
@@ -143,10 +143,10 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             type="button"
             onClick={handleSend}
             disabled={isSending || (!text.trim() && !image)}
-            className="h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-xs gap-1.5 shrink-0"
+            className="group h-9 px-3.5 rounded-xl bg-primary hover:bg-primary/90 hover:-translate-y-0.5 text-primary-foreground font-semibold text-xs gap-1.5 shrink-0 smooth-interactive"
           >
             <span>{isSending ? 'Writing...' : 'Get Replies'}</span>
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp className="h-3.5 w-3.5 smooth-interactive group-hover:-translate-y-0.5" />
           </Button>
         </div>
       </div>

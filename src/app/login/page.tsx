@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Check, Copy } from 'lucide-react';
@@ -45,9 +45,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSample, setSelectedSample] = useState(1);
+  const [isHoveringDeck, setIsHoveringDeck] = useState(false);
   const router = useRouter();
   const { refreshProfile } = useAuth();
   const { toast } = useToast();
+
+  // Slow, unhurried auto-cycle across the 3 sample replies when idle
+  useEffect(() => {
+    if (isHoveringDeck) return;
+    const timer = setInterval(() => {
+      setSelectedSample((prev) => (prev + 1) % sampleReplies.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [isHoveringDeck]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,12 +119,12 @@ export default function LoginPage() {
       {/* Left Showcase Panel — Locked Flex Column */}
       <div className="hidden lg:flex lg:w-[55%] xl:w-[57%] flex-col justify-between p-8 xl:p-10 border-r border-border/60 relative overflow-hidden bg-gradient-to-b from-background via-card/40 to-background">
         <div
-          className="pointer-events-none absolute -top-36 -left-36 h-80 w-80 rounded-full opacity-15 blur-3xl"
+          className="pointer-events-none absolute -top-36 -left-36 h-96 w-96 rounded-full opacity-20 blur-3xl animate-ambient-drift"
           style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
         />
 
         {/* Top Bar */}
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between animate-reveal-up">
           <RizzLogo size="md" />
           <span className="text-xs text-muted-foreground font-medium">
             iMessage · Hinge · IG DMs
@@ -123,7 +133,7 @@ export default function LoginPage() {
 
         {/* Center Content — Compact Flex Stack */}
         <div className="relative z-10 flex flex-col gap-6 max-w-xl my-auto">
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 animate-reveal-up delay-100">
             <h1 className="font-headline text-4xl xl:text-5xl leading-[1.04] tracking-tight">
               Don’t overthink the reply.{' '}
               <span className="italic text-primary">Send the right one.</span>
@@ -134,12 +144,16 @@ export default function LoginPage() {
           </div>
 
           {/* Interactive Message Thread Card */}
-          <div className="flex flex-col rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-4 shadow-xl gap-3.5">
+          <div
+            onMouseEnter={() => setIsHoveringDeck(true)}
+            onMouseLeave={() => setIsHoveringDeck(false)}
+            className="flex flex-col rounded-2xl border border-border/80 bg-card/85 backdrop-blur-md p-4 shadow-xl gap-3.5 animate-reveal-up delay-200 smooth-interactive"
+          >
             {/* Incoming DM Header & Bubble */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
                 <span className="flex items-center gap-1.5 font-medium text-foreground/80">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   maya · Hinge
                 </span>
                 <span>just now</span>
@@ -153,7 +167,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-2 pt-1 border-t border-border/50">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
                 <span>Pick your angle</span>
-                <span className="font-code text-[10px]">TAP TO PREVIEW</span>
+                <span className="font-code text-[10px]">TAP TO COPY</span>
               </div>
 
               {sampleReplies.map((item, idx) => {
@@ -166,14 +180,14 @@ export default function LoginPage() {
                       setSelectedSample(idx);
                       navigator.clipboard?.writeText(item.text);
                     }}
-                    className={`group flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
+                    className={`group flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left smooth-interactive ${
                       isSelected
-                        ? 'border-primary/80 bg-primary/[0.08] shadow-sm'
-                        : 'border-border/60 bg-background/60 hover:border-border hover:bg-background/90'
+                        ? 'border-primary/80 bg-primary/[0.08] shadow-sm -translate-y-[1px]'
+                        : 'border-border/60 bg-background/60 hover:border-border hover:bg-background/90 hover:-translate-y-[1px]'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="inline-flex items-center gap-1.5 shrink-0 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground/90">
+                      <span className="inline-flex items-center gap-1.5 shrink-0 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-foreground/90 smooth-interactive">
                         <span className={`h-1.5 w-1.5 rounded-full ${item.dot}`} />
                         {item.vibe}
                       </span>
@@ -183,7 +197,7 @@ export default function LoginPage() {
                     </div>
 
                     <span
-                      className={`shrink-0 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition-colors ${
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium smooth-interactive ${
                         isSelected
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground group-hover:text-foreground'
@@ -206,7 +220,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Footer */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4">
+        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4 animate-reveal-up delay-300">
           <div className="flex items-center gap-5">
             <span>Screenshot support</span>
             <span>·</span>
@@ -220,19 +234,19 @@ export default function LoginPage() {
 
       {/* Right Sign-In Column — Flex Centered */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 xl:p-10 bg-background overflow-y-auto">
-        <div className="flex items-center justify-between lg:justify-end">
+        <div className="flex items-center justify-between lg:justify-end animate-reveal-up">
           <div className="lg:hidden">
             <RizzLogo size="sm" />
           </div>
           <Link
             href="/signup"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground smooth-interactive"
           >
             New here? <span className="text-primary underline underline-offset-4">Create account →</span>
           </Link>
         </div>
 
-        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-6 py-4">
+        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-6 py-4 animate-reveal-up delay-100">
           <div className="space-y-1.5">
             <h2 className="font-headline text-3xl sm:text-4xl tracking-tight">
               Sign in to RizzUp
@@ -246,7 +260,7 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-11 rounded-xl border-border bg-card hover:bg-accent/60 text-foreground font-medium transition-all"
+              className="w-full h-11 rounded-xl border-border bg-card hover:bg-accent/60 hover:-translate-y-0.5 text-foreground font-medium smooth-interactive"
               onClick={handleGoogleSignIn}
               disabled={isLoading}
             >
@@ -278,7 +292,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary smooth-interactive"
                 />
               </div>
 
@@ -294,31 +308,31 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary smooth-interactive"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 transition-all mt-1"
+                className="group w-full h-10 rounded-xl bg-primary hover:bg-primary/90 hover:-translate-y-0.5 text-primary-foreground font-semibold shadow-md shadow-primary/20 smooth-interactive mt-1"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4 smooth-interactive group-hover:translate-x-1" />
               </Button>
             </form>
           </div>
 
           <p className="text-center text-xs text-muted-foreground">
             No account yet?{' '}
-            <Link href="/signup" className="font-semibold text-foreground hover:text-primary underline underline-offset-4">
+            <Link href="/signup" className="font-semibold text-foreground hover:text-primary underline underline-offset-4 smooth-interactive">
               Sign up for 15 free daily replies
             </Link>
           </p>
         </div>
 
-        <div className="text-center lg:text-left">
-          <Link href="/privacy-policy" className="text-[11px] text-muted-foreground hover:underline">
+        <div className="text-center lg:text-left animate-reveal-up delay-200">
+          <Link href="/privacy-policy" className="text-[11px] text-muted-foreground hover:underline smooth-interactive">
             Privacy & Terms
           </Link>
         </div>

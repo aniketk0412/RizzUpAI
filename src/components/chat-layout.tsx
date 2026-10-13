@@ -445,12 +445,17 @@ export default function ChatLayout() {
 
         <SidebarOverlay />
 
-        <SidebarInset className="flex flex-1 flex-col h-dvh overflow-hidden">
+        <SidebarInset className="relative flex flex-1 flex-col h-dvh overflow-hidden">
+          <div
+            className="pointer-events-none absolute -top-44 right-1/4 h-96 w-96 rounded-full opacity-15 blur-3xl animate-ambient-drift"
+            style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+          />
+
           {/* Top Bar + Calibrator Pills */}
-          <header className="shrink-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
+          <header className="shrink-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md animate-reveal-fade">
             <div className="max-w-4xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
-                <SidebarTrigger className="h-8 w-8 rounded-lg" />
+                <SidebarTrigger className="h-8 w-8 rounded-lg smooth-interactive" />
                 <RizzLogo size="sm" />
               </div>
 
@@ -470,7 +475,7 @@ export default function ChatLayout() {
                           activeSession && updateSession(activeSession.id, { relation: rel.value })
                         }
                         className={cn(
-                          'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                          'px-2.5 py-1 rounded-lg text-xs font-medium smooth-interactive',
                           active
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -496,7 +501,7 @@ export default function ChatLayout() {
                           activeSession && updateSession(activeSession.id, { tone: t.value })
                         }
                         className={cn(
-                          'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                          'px-2.5 py-1 rounded-lg text-xs font-medium smooth-interactive',
                           active
                             ? 'bg-foreground text-background shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -515,16 +520,16 @@ export default function ChatLayout() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsCreditDialogOpen(true)}
-                  className="h-8 rounded-xl border-border/80 bg-card font-code text-xs gap-1.5"
+                  className="h-8 rounded-xl border-border/80 bg-card font-code text-xs gap-1.5 smooth-interactive hover:border-primary/50"
                 >
-                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                   {credits} <span className="hidden sm:inline">LEFT</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleTheme}
-                  className="h-8 w-8 rounded-xl"
+                  className="h-8 w-8 rounded-xl smooth-interactive"
                 >
                   {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
@@ -533,7 +538,7 @@ export default function ChatLayout() {
           </header>
 
           {/* Main Flex Workspace — Scrolls internally only when needed */}
-          <main className="flex-1 overflow-y-auto px-4 py-4 flex flex-col">
+          <main className="relative z-10 flex-1 overflow-y-auto px-4 py-4 flex flex-col scroll-smooth">
             <div className="max-w-3xl w-full mx-auto flex-1 flex flex-col">
               {activeSession && activeSession.messages.length > 0 ? (
                 <div className="flex flex-col gap-6 py-2">
@@ -543,9 +548,9 @@ export default function ChatLayout() {
                   <div ref={messagesEndRef} />
                 </div>
               ) : (
-                /* Empty State — Flex Centered, No Page Overflow */
+                /* Empty State — Flex Centered, Staggered Slow Entrance */
                 <div className="my-auto flex flex-col gap-6 py-4">
-                  <div className="space-y-2 max-w-lg">
+                  <div className="space-y-2 max-w-lg animate-reveal-up">
                     <h1 className="font-headline text-3xl sm:text-4xl tracking-tight leading-[1.06]">
                       What did they <span className="italic text-primary">send you</span>?
                     </h1>
@@ -555,7 +560,7 @@ export default function ChatLayout() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <span className="text-xs text-muted-foreground px-0.5">
+                    <span className="text-xs text-muted-foreground px-0.5 animate-reveal-up delay-100">
                       Try a sample incoming text
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -564,6 +569,7 @@ export default function ChatLayout() {
                           key={i}
                           type="button"
                           disabled={isSending}
+                          style={{ animationDelay: `${160 + i * 110}ms` }}
                           onClick={() => {
                             if (activeSession) {
                               updateSession(activeSession.id, {
@@ -573,7 +579,7 @@ export default function ChatLayout() {
                             }
                             handleSendMessage(item.prompt);
                           }}
-                          className="group flex items-center justify-between gap-3 text-left rounded-xl border border-border/75 bg-card/85 hover:border-primary/60 hover:bg-card px-3.5 py-3 transition-all"
+                          className="group flex items-center justify-between gap-3 text-left rounded-xl border border-border/75 bg-card/85 hover:border-primary/60 hover:bg-card hover:-translate-y-0.5 hover:shadow-md px-3.5 py-3 animate-reveal-up smooth-interactive"
                         >
                           <div className="flex flex-col gap-1 min-w-0">
                             <span className="text-[11px] font-medium text-muted-foreground">
@@ -583,7 +589,7 @@ export default function ChatLayout() {
                               “{item.prompt}”
                             </p>
                           </div>
-                          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+                          <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 smooth-interactive" />
                         </button>
                       ))}
                     </div>

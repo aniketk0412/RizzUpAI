@@ -80,8 +80,101 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-700 ease-out;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@keyframes revealUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0) scale(0.985);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes revealFade {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes ambientDrift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, -18px, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-16px, 20px, 0) scale(0.96);
+  }
+}
+
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+@layer utilities {
+  .animate-reveal-up {
+    animation: revealUp 0.95s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-reveal-fade {
+    animation: revealFade 1.1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-ambient-drift {
+    animation: ambientDrift 16s ease-in-out infinite alternate;
+  }
+
+  .animate-float-slow {
+    animation: floatSlow 7s ease-in-out infinite;
+  }
+
+  .ease-silk {
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .smooth-interactive {
+    transition-property: all;
+    transition-duration: 600ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .delay-100 {
+    animation-delay: 110ms;
+  }
+  .delay-200 {
+    animation-delay: 220ms;
+  }
+  .delay-300 {
+    animation-delay: 330ms;
+  }
+  .delay-400 {
+    animation-delay: 440ms;
+  }
+  .delay-500 {
+    animation-delay: 550ms;
   }
 }

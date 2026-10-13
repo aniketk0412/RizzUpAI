@@ -120,11 +120,11 @@ export default function SignupPage() {
       {/* Left Showcase Panel — Locked Flex Column */}
       <div className="hidden lg:flex lg:w-[55%] xl:w-[57%] flex-col justify-between p-8 xl:p-10 border-r border-border/60 relative overflow-hidden bg-gradient-to-b from-background via-card/40 to-background">
         <div
-          className="pointer-events-none absolute -bottom-36 -right-36 h-80 w-80 rounded-full opacity-15 blur-3xl"
+          className="pointer-events-none absolute -bottom-36 -right-36 h-96 w-96 rounded-full opacity-20 blur-3xl animate-ambient-drift"
           style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
         />
 
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex items-center justify-between animate-reveal-up">
           <RizzLogo size="md" />
           <span className="text-xs text-muted-foreground font-medium">
             15 free replies every day
@@ -132,7 +132,7 @@ export default function SignupPage() {
         </div>
 
         <div className="relative z-10 flex flex-col gap-6 max-w-xl my-auto">
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 animate-reveal-up delay-100">
             <h1 className="font-headline text-4xl xl:text-5xl leading-[1.04] tracking-tight">
               Three angles for <span className="italic text-primary">every text</span>.
             </h1>
@@ -142,10 +142,11 @@ export default function SignupPage() {
           </div>
 
           <div className="flex flex-col gap-2.5">
-            {vibeExamples.map((item) => (
+            {vibeExamples.map((item, idx) => (
               <div
                 key={item.vibe}
-                className="flex flex-col gap-1.5 rounded-2xl border border-border/75 bg-card/80 p-3.5"
+                style={{ animationDelay: `${200 + idx * 130}ms` }}
+                className="flex flex-col gap-1.5 rounded-2xl border border-border/75 bg-card/80 hover:border-primary/50 hover:-translate-y-0.5 p-3.5 animate-reveal-up smooth-interactive"
               >
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">
@@ -162,7 +163,7 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4">
+        <div className="relative z-10 flex items-center justify-between text-xs text-muted-foreground border-t border-border/40 pt-4 animate-reveal-up delay-400">
           <div className="flex items-center gap-5">
             <span className="inline-flex items-center gap-1">
               <Check className="h-3.5 w-3.5 text-primary" /> Daily refill included
@@ -180,19 +181,19 @@ export default function SignupPage() {
 
       {/* Right Signup Column */}
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-8 xl:p-10 bg-background overflow-y-auto">
-        <div className="flex items-center justify-between lg:justify-end">
+        <div className="flex items-center justify-between lg:justify-end animate-reveal-up">
           <div className="lg:hidden">
             <RizzLogo size="sm" />
           </div>
           <Link
             href="/login"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground smooth-interactive"
           >
             Already have an account? <span className="text-primary underline underline-offset-4">Sign in →</span>
           </Link>
         </div>
 
-        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-5 py-4">
+        <div className="w-full max-w-sm mx-auto my-auto flex flex-col gap-5 py-4 animate-reveal-up delay-100">
           <div className="space-y-1">
             <h2 className="font-headline text-3xl sm:text-4xl tracking-tight">
               Create your account
@@ -206,7 +207,7 @@ export default function SignupPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-10 rounded-xl border-border bg-card hover:bg-accent/60 text-foreground font-medium transition-all"
+              className="w-full h-10 rounded-xl border-border bg-card hover:bg-accent/60 hover:-translate-y-0.5 text-foreground font-medium smooth-interactive"
               onClick={handleGoogleSignUp}
               disabled={isLoading}
             >
@@ -238,7 +239,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary smooth-interactive"
                 />
               </div>
 
@@ -255,7 +256,7 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary smooth-interactive"
                 />
               </div>
 
@@ -272,24 +273,24 @@ export default function SignupPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={isLoading}
-                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary"
+                  className="h-10 rounded-xl bg-card border-border/80 focus-visible:ring-primary smooth-interactive"
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 transition-all mt-1"
+                className="group w-full h-10 rounded-xl bg-primary hover:bg-primary/90 hover:-translate-y-0.5 text-primary-foreground font-semibold shadow-md shadow-primary/20 smooth-interactive mt-1"
                 disabled={isLoading}
               >
                 {isLoading ? 'Creating account...' : 'Create Account'}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4 smooth-interactive group-hover:translate-x-1" />
               </Button>
             </form>
           </div>
         </div>
 
-        <div className="text-center lg:text-left">
-          <Link href="/privacy-policy" className="text-[11px] text-muted-foreground hover:underline">
+        <div className="text-center lg:text-left animate-reveal-up delay-200">
+          <Link href="/privacy-policy" className="text-[11px] text-muted-foreground hover:underline smooth-interactive">
             Privacy & Terms
           </Link>
         </div>

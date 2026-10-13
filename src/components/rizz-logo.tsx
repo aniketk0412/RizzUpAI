@@ -21,8 +21,18 @@ export function RizzLogo({ className, size = 'md', showText = true }: RizzLogoPr
   }[size];
 
   return (
-    <div className={cn('inline-flex items-center gap-2.5 select-none', className)}>
-      <div className={cn('relative shrink-0', iconDimensions)}>
+    <div
+      className={cn(
+        'group inline-flex items-center gap-2.5 select-none smooth-interactive',
+        className
+      )}
+    >
+      <div
+        className={cn(
+          'relative shrink-0 smooth-interactive group-hover:scale-105 group-hover:-rotate-3',
+          iconDimensions
+        )}
+      >
         <svg
           viewBox="0 0 64 64"
           fill="none"
@@ -68,7 +78,7 @@ export function RizzLogo({ className, size = 'md', showText = true }: RizzLogoPr
 
       {showText && (
         <span className={cn('font-headline tracking-tight leading-none text-foreground', textSize)}>
-          Rizz<span className="italic text-primary">Up</span>
+          Rizz<span className="italic text-primary smooth-interactive">Up</span>
         </span>
       )}
     </div>
