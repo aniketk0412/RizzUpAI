@@ -212,7 +212,9 @@ export async function generateStructuredJSON(params: {
             model: geminiModel,
             contents,
             config: {
+              ...(params.systemInstruction && { systemInstruction: params.systemInstruction }),
               responseMimeType: 'application/json',
+              temperature: 0.85,
               ...(params.geminiSchema && { responseSchema: params.geminiSchema }),
             },
           }),
@@ -334,7 +336,7 @@ async function callOpenAICompatible(opts: {
       body: JSON.stringify({
         model: opts.model,
         messages,
-        temperature: 0.75,
+        temperature: 0.85,
         max_tokens: 1500,
       }),
       signal: controller.signal,
