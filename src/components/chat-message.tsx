@@ -8,6 +8,7 @@ import type { Message } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from './ui/skeleton';
+import { playCopySuccess, playTactileClick, triggerHaptic } from '@/lib/sound-haptics';
 
 interface ChatMessageProps {
   message: Message;
@@ -57,6 +58,8 @@ export default function ChatMessage({
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
+    playCopySuccess();
+    triggerHaptic('success');
     setCopiedIndex(index);
     setTimeout(() => {
       setCopiedIndex(null);
@@ -258,7 +261,11 @@ export default function ChatMessage({
                   variant="outline"
                   size="sm"
                   title="Generate 3 higher-voltage, bold lines"
-                  onClick={() => onReroll(message.id, true)}
+                  onClick={() => {
+                    playTactileClick();
+                    triggerHaptic('medium');
+                    onReroll(message.id, true);
+                  }}
                   className="h-7 px-2.5 rounded-xl border-amber-500/35 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 font-semibold text-xs gap-1.5 smooth-interactive shadow-sm"
                 >
                   <Flame className="h-3.5 w-3.5 fill-amber-500" />
@@ -269,7 +276,11 @@ export default function ChatMessage({
                   variant="ghost"
                   size="sm"
                   title="Generate 3 fresh angles"
-                  onClick={() => onReroll(message.id, false)}
+                  onClick={() => {
+                    playTactileClick();
+                    triggerHaptic('light');
+                    onReroll(message.id, false);
+                  }}
                   className="h-7 px-2 rounded-xl text-xs text-muted-foreground hover:text-foreground gap-1 smooth-interactive"
                 >
                   <RotateCw className="h-3 w-3" />

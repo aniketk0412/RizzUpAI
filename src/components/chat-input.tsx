@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect, type ChangeEvent, type KeyboardEvent } from 'react';
 import Image from 'next/image';
-import { ImagePlus, Mic, ArrowUp, X } from 'lucide-react';
+import { ImagePlus, Mic, ArrowUp, X, ClipboardPaste } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSpeechToText } from '@/hooks/use-speech-to-text';
+import { playTactileClick, triggerHaptic } from '@/lib/sound-haptics';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
@@ -33,9 +34,27 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
   const handleSend = () => {
     if ((text.trim() || image) && !isSending) {
+      playTactileClick();
+      triggerHaptic('medium');
       onSendMessage(text.trim(), image?.preview);
       setText('');
       setImage(null);
+    }
+  };
+
+  const handlePasteClipboard = async () => {
+    try {
+      playTactileClick();
+      triggerHaptic('light');
+      const clipText = await navigator.clipboard.readText();
+      if (clipText && clipText.trim()) {
+        setText(clipText.trim());
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }
+    } catch (err) {
+      console.warn('Clipboard read error:', err);
     }
   };
 
@@ -48,6 +67,8 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
+      playTactileClick();
+      triggerHaptic('light');
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -83,6 +104,20 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
           </div>
         )}
 
+        {/* Floating Quick Action: 1-Tap Paste from Clipboard */}
+        {!text && !image && !isSending && (
+          <div className="mb-2 flex items-center gap-2 animate-reveal-fade">
+            <button
+              type="button"
+              onClick={handlePasteClipboard}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-card shadow-xs smooth-interactive"
+            >
+              <ClipboardPaste className="h-3.5 w-3.5 text-primary group-hover:scale-110 smooth-interactive" />
+              <span>1-Tap Paste from clipboard</span>
+            </button>
+          </div>
+        )}
+
         <div
           className={cn(
             'relative flex items-end gap-1.5 rounded-2xl border border-border/85 bg-card p-1.5 shadow-md smooth-interactive focus-within:border-primary/60 focus-within:shadow-lg focus-within:shadow-primary/5',
@@ -107,6 +142,18 @@ export default function ChatInput({ onSendMessage, isSending }: ChatInputProps) 
             className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 smooth-interactive"
           >
             <ImagePlus className="h-4 w-4" />
+          </Button>
+
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            title="1-Tap Paste from clipboard"
+            onClick={handlePasteClipboard}
+            disabled={isSending}
+            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground shrink-0 smooth-interactive"
+          >
+            <ClipboardPaste className="h-4 w-4" />
           </Button>
 
           <Button
