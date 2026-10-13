@@ -44,46 +44,53 @@ export async function generateStructuredJSON(params: {
     }
   }
 
-  // 2. Try Google Gemini 2.5 Flash (1M Context Window)
-  const geminiKey =
+  // 2. Try Google Gemini (gemini-3.8-flash primary with automatic model fallback)
+  const geminiKey = (
     process.env.GEMINI_API_KEY ||
     process.env.GOOGLE_GENAI_API_KEY ||
-    process.env.GOOGLE_API_KEY;
+    process.env.GOOGLE_API_KEY ||
+    ''
+  ).trim();
 
   if (geminiKey) {
-    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-    try {
-      const ai = new GoogleGenAI({ apiKey: geminiKey });
-      const contents: any[] = [];
+    const candidateModels = process.env.GEMINI_MODEL
+      ? [process.env.GEMINI_MODEL, 'gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-2.5-flash']
+      : ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.0-flash', 'gemini-2.5-flash'];
 
-      if (params.imageDataUri) {
-        const match = params.imageDataUri.match(/^data:([^;]+);base64,(.+)$/);
-        if (match) {
-          contents.push({
-            inlineData: {
-              mimeType: match[1],
-              data: match[2],
-            },
-          });
+    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    const contents: any[] = [];
+
+    if (params.imageDataUri) {
+      const match = params.imageDataUri.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        contents.push({
+          inlineData: {
+            mimeType: match[1],
+            data: match[2],
+          },
+        });
+      }
+    }
+    contents.push({ text: params.prompt });
+
+    for (const geminiModel of candidateModels) {
+      try {
+        const result = await ai.models.generateContent({
+          model: geminiModel,
+          contents,
+          config: {
+            responseMimeType: 'application/json',
+            ...(params.geminiSchema && { responseSchema: params.geminiSchema }),
+          },
+        });
+
+        if (result.text) {
+          return { text: result.text, providerUsed: 'gemini', modelUsed: geminiModel };
         }
+      } catch (err: any) {
+        console.warn(`Gemini (${geminiModel}) fallback triggered:`, err.message);
+        errors.push(`Gemini(${geminiModel}): ${err.message}`);
       }
-      contents.push({ text: params.prompt });
-
-      const result = await ai.models.generateContent({
-        model: geminiModel,
-        contents,
-        config: {
-          responseMimeType: 'application/json',
-          ...(params.geminiSchema && { responseSchema: params.geminiSchema }),
-        },
-      });
-
-      if (result.text) {
-        return { text: result.text, providerUsed: 'gemini', modelUsed: geminiModel };
-      }
-    } catch (err: any) {
-      console.warn('Gemini fallback triggered:', err.message);
-      errors.push(`Gemini: ${err.message}`);
     }
   }
 

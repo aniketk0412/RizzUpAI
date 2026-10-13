@@ -260,6 +260,10 @@ export default function ChatLayout() {
           ...(image && { image }),
         });
 
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
         if (typeof response.remainingCredits === 'number') {
           updateLocalCredits(response.remainingCredits);
         } else {
@@ -453,16 +457,16 @@ export default function ChatLayout() {
 
           {/* Top Bar + Calibrator Pills */}
           <header className="shrink-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-md animate-reveal-fade">
-            <div className="max-w-4xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2">
+            <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 overflow-x-auto">
+              <div className="flex items-center gap-2 shrink-0">
                 <SidebarTrigger className="h-8 w-8 rounded-lg smooth-interactive" />
                 <RizzLogo size="sm" />
               </div>
 
               {/* Tactile Pill Selectors */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
-                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
+                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-1.5 hidden xl:inline">
                     Who:
                   </span>
                   {defaultRelations.map((rel) => {
@@ -475,7 +479,7 @@ export default function ChatLayout() {
                           activeSession && updateSession(activeSession.id, { relation: rel.value })
                         }
                         className={cn(
-                          'px-2.5 py-1 rounded-lg text-xs font-medium smooth-interactive',
+                          'px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap smooth-interactive',
                           active
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -488,7 +492,7 @@ export default function ChatLayout() {
                 </div>
 
                 <div className="inline-flex items-center rounded-xl border border-border/80 bg-card p-1 gap-0.5">
-                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-2 hidden sm:inline">
+                  <span className="font-code text-[10px] uppercase tracking-wider text-muted-foreground px-1.5 hidden xl:inline">
                     Vibe:
                   </span>
                   {defaultTones.map((t) => {
@@ -501,7 +505,7 @@ export default function ChatLayout() {
                           activeSession && updateSession(activeSession.id, { tone: t.value })
                         }
                         className={cn(
-                          'px-2.5 py-1 rounded-lg text-xs font-medium smooth-interactive',
+                          'px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap smooth-interactive',
                           active
                             ? 'bg-foreground text-background shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -515,7 +519,7 @@ export default function ChatLayout() {
               </div>
 
               {/* Right Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
@@ -523,7 +527,7 @@ export default function ChatLayout() {
                   className="h-8 rounded-xl border-border/80 bg-card font-code text-xs gap-1.5 smooth-interactive hover:border-primary/50"
                 >
                   <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                  {credits} <span className="hidden sm:inline">LEFT</span>
+                  {credits} <span className="hidden md:inline">LEFT</span>
                 </Button>
                 <Button
                   variant="ghost"

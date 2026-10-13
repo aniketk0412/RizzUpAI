@@ -20,6 +20,7 @@ export interface MaintainSessionMemoryOutput {
   explanation: string;
   options: ReplyOption[];
   remainingCredits?: number;
+  error?: string;
 }
 
 export async function maintainSessionMemory(
@@ -28,6 +29,7 @@ export async function maintainSessionMemory(
   try {
     let remainingCredits: number | undefined;
 
+    // 1. Verify credits BEFORE calling AI (do not deduct until AI succeeds)
     if (isDatabaseConfigured() && input.userId) {
       const [userRecord] = await db
         .select({ credits: users.credits })
@@ -36,18 +38,13 @@ export async function maintainSessionMemory(
         .limit(1);
 
       if (!userRecord || userRecord.credits < 1) {
-        throw new Error('Insufficient credits.');
+        return {
+          response: '',
+          explanation: '',
+          options: [],
+          error: 'Insufficient credits. Wait for the daily refill or top up.',
+        };
       }
-
-      const [updated] = await db
-        .update(users)
-        .set({
-          credits: sql`${users.credits} - 1`,
-        })
-        .where(eq(users.id, input.userId))
-        .returning({ credits: users.credits });
-
-      remainingCredits = updated?.credits;
     }
 
     const promptText = `You are RizzUp, an effortless, sharp texting wingman.
@@ -102,7 +99,7 @@ Return strictly valid JSON:
               properties: {
                 label: {
                   type: Type.STRING,
-                  description: 'Short vibe title, e.g. "Playful Banter", "Smooth & Charming", "Bold & Flirty"',
+                  description: 'Short vibe title: "Chill", "Smooth", or "Bold"',
                 },
                 text: {
                   type: Type.STRING,
@@ -110,7 +107,7 @@ Return strictly valid JSON:
                 },
                 vibeReason: {
                   type: Type.STRING,
-                  description: '1-sentence explanation of why this option works',
+                  description: '4-7 word note on why this line works',
                 },
               },
               required: ['label', 'text', 'vibeReason'],
@@ -128,30 +125,48 @@ Return strictly valid JSON:
         ? output.options
         : [
             {
-              label: 'Playful',
-              text: output.response || 'Tell me more 👀',
-              vibeReason: output.explanation || 'Casual and lighthearted',
+              label: 'Chill',
+              text: output.response || 'tell me more 👀',
+              vibeReason: output.explanation || 'Casual and low pressure',
             },
             {
               label: 'Smooth',
-              text: output.response || 'Tell me more 👀',
-              vibeReason: 'Charming and confident',
+              text: output.response || 'tell me more 👀',
+              vibeReason: 'Confident and natural',
             },
             {
               label: 'Bold',
-              text: output.response || 'Tell me more 👀',
-              vibeReason: 'High energy and memorable',
+              text: output.response || 'tell me more 👀',
+              vibeReason: 'Direct and memorable',
             },
           ];
 
+    // 2. Deduct 1 credit ONLY after AI successfully generated the 3 replies
+    if (isDatabaseConfigured() && input.userId) {
+      const [updated] = await db
+        .update(users)
+        .set({
+          credits: sql`GREATEST(0, ${users.credits} - 1)`,
+        })
+        .where(eq(users.id, input.userId))
+        .returning({ credits: users.credits });
+
+      remainingCredits = updated?.credits;
+    }
+
     return {
       response: output.response || options[1]?.text || options[0]?.text,
-      explanation: output.explanation || 'Pick the vibe that fits your move:',
+      explanation: output.explanation || 'Pick the line that fits your move:',
       options,
       remainingCredits,
     };
   } catch (e: any) {
     console.error('Error in maintainSessionMemory:', e);
-    throw new Error(e.message || 'Failed to generate AI response.');
+    return {
+      response: '',
+      explanation: '',
+      options: [],
+      error: e.message || 'Failed to generate AI response.',
+    };
   }
 }
