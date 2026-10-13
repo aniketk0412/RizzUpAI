@@ -114,6 +114,15 @@ export async function saveDbChatMessage(sessionId: string, message: Message) {
   });
 }
 
+export async function deleteDbChatMessage(messageId: string) {
+  const session = await auth();
+  if (!session?.user?.id || !isDatabaseConfigured()) return;
+
+  await db
+    .delete(chatMessages)
+    .where(eq(chatMessages.id, messageId));
+}
+
 export async function updateDbSelectedOption(
   messageId: string,
   selectedOptionIndex: number,

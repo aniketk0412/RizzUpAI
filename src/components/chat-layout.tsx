@@ -70,6 +70,7 @@ import {
   updateDbChatSession,
   deleteDbChatSession,
   saveDbChatMessage,
+  deleteDbChatMessage,
 } from '@/actions/chat-actions';
 import { cn } from '@/lib/utils';
 
@@ -304,6 +305,53 @@ export default function ChatLayout() {
       }
     },
     [activeSession, credits, toast, updateSession, activeSessionId, user, updateLocalCredits, setSessions]
+  );
+
+  const handleResendMessage = useCallback(
+    (text: string, image?: string) => {
+      handleSendMessage(text, image);
+    },
+    [handleSendMessage]
+  );
+
+  const handleEditMessage = useCallback(
+    (messageId: string, newText: string) => {
+      if (!activeSession) return;
+      const msgIndex = activeSession.messages.findIndex((m) => m.id === messageId);
+      if (msgIndex === -1) return;
+      const targetMsg = activeSession.messages[msgIndex];
+      const subsequentAi = activeSession.messages[msgIndex + 1];
+
+      const deleteIds = [messageId];
+      if (subsequentAi && subsequentAi.sender === 'ai') {
+        deleteIds.push(subsequentAi.id);
+      }
+      deleteIds.forEach((id) => deleteDbChatMessage(id).catch(() => {}));
+
+      const previousMessages = activeSession.messages.slice(0, msgIndex);
+      updateSession(activeSession.id, { messages: previousMessages });
+      handleSendMessage(newText, targetMsg.image);
+    },
+    [activeSession, updateSession, handleSendMessage]
+  );
+
+  const handleDeleteMessage = useCallback(
+    (messageId: string) => {
+      if (!activeSession) return;
+      const msgIndex = activeSession.messages.findIndex((m) => m.id === messageId);
+      if (msgIndex === -1) return;
+      const subsequentAi = activeSession.messages[msgIndex + 1];
+
+      const deleteIds = [messageId];
+      if (subsequentAi && subsequentAi.sender === 'ai') {
+        deleteIds.push(subsequentAi.id);
+      }
+      deleteIds.forEach((id) => deleteDbChatMessage(id).catch(() => {}));
+
+      const updatedMessages = activeSession.messages.filter((m) => !deleteIds.includes(m.id));
+      updateSession(activeSession.id, { messages: updatedMessages });
+    },
+    [activeSession, updateSession]
   );
 
   const handleRename = () => {
@@ -547,7 +595,14 @@ export default function ChatLayout() {
               {activeSession && activeSession.messages.length > 0 ? (
                 <div className="flex flex-col gap-6 py-2">
                   {activeSession.messages.map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                    <ChatMessage
+                      key={message.id}
+                      message={message}
+                      relation={activeSession.relation || 'Crush'}
+                      onResend={handleResendMessage}
+                      onEdit={handleEditMessage}
+                      onDelete={handleDeleteMessage}
+                    />
                   ))}
                   <div ref={messagesEndRef} />
                 </div>

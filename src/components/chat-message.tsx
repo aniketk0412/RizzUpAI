@@ -2,36 +2,56 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, RotateCw, Pencil, Trash2, X, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from './ui/skeleton';
 
 interface ChatMessageProps {
   message: Message;
+  relation?: string;
+  onResend?: (text: string, image?: string) => void;
+  onEdit?: (messageId: string, newText: string) => void;
+  onDelete?: (messageId: string) => void;
 }
 
 const vibeMeta = [
   {
+    num: '01',
     defaultLabel: 'Chill',
     dot: 'bg-emerald-400',
-    activeRing: 'border-emerald-500/80 bg-emerald-500/[0.06]',
+    badgeBg: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/25',
+    activeRing: 'border-emerald-500/80 bg-emerald-500/[0.06] shadow-emerald-500/10 shadow-lg',
   },
   {
+    num: '02',
     defaultLabel: 'Smooth',
     dot: 'bg-primary',
-    activeRing: 'border-primary/80 bg-primary/[0.06]',
+    badgeBg: 'bg-primary/10 text-primary border-primary/25',
+    activeRing: 'border-primary/80 bg-primary/[0.06] shadow-primary/10 shadow-lg',
   },
   {
+    num: '03',
     defaultLabel: 'Bold',
     dot: 'bg-amber-400',
-    activeRing: 'border-amber-500/80 bg-amber-500/[0.06]',
+    badgeBg: 'bg-amber-500/10 text-amber-500 border-amber-500/25',
+    activeRing: 'border-amber-500/80 bg-amber-500/[0.06] shadow-amber-500/10 shadow-lg',
   },
 ];
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({
+  message,
+  relation = 'Crush',
+  onResend,
+  onEdit,
+  onDelete,
+}: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.text);
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -41,77 +61,173 @@ export default function ChatMessage({ message }: ChatMessageProps) {
     }, 2200);
   };
 
+  const handleSaveEdit = () => {
+    if (editText.trim() && onEdit) {
+      onEdit(message.id, editText.trim());
+      setIsEditing(false);
+    }
+  };
+
   const hasOptions = !isUser && message.options && message.options.length > 0;
 
+  // 1. Sent / Incoming Message (The Target Context Card)
   if (isUser) {
     return (
-      <div className="flex flex-col items-end w-full gap-1 animate-reveal-up">
-        <span className="text-[11px] text-muted-foreground px-1">
-          Their message
-        </span>
-        <div className="max-w-lg rounded-2xl rounded-tr-sm px-4 py-2.5 space-y-2 bg-secondary text-secondary-foreground border border-border/70 smooth-interactive">
-          {message.image && (
+      <div className="group relative w-full rounded-2xl border border-border/80 bg-card/90 p-4 sm:p-5 shadow-sm smooth-interactive hover:border-primary/50 hover:shadow-md animate-reveal-up">
+        {/* Top Meta Bar + Hover Actions (Resend, Edit, Delete) */}
+        <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-3 mb-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Incoming text · <span className="text-primary font-semibold">{relation}</span></span>
+          </div>
+
+          {/* Hover Action Toolbar: Resend, Edit, Delete */}
+          <div className="flex items-center gap-1 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
+            {onResend && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Resend & regenerate 3 angles"
+                onClick={() => onResend(message.text, message.image)}
+                className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg gap-1 smooth-interactive"
+              >
+                <RotateCw className="h-3 w-3" />
+                <span>Resend</span>
+              </Button>
+            )}
+
+            {onEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Edit message"
+                onClick={() => {
+                  setEditText(message.text);
+                  setIsEditing(!isEditing);
+                }}
+                className="h-7 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground rounded-lg gap-1 smooth-interactive"
+              >
+                <Pencil className="h-3 w-3" />
+                <span>Edit</span>
+              </Button>
+            )}
+
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                title="Delete message"
+                onClick={() => onDelete(message.id)}
+                className="h-7 px-2 text-[11px] font-medium text-destructive/80 hover:text-destructive hover:bg-destructive/10 rounded-lg gap-1 smooth-interactive"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>Delete</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Message Content or Inline Edit Mode */}
+        {message.image && (
+          <div className="mb-3">
             <Image
               src={message.image}
               alt="Screenshot context"
-              width={280}
-              height={200}
-              className="rounded-xl object-cover border border-border"
+              width={340}
+              height={220}
+              className="rounded-xl object-cover border border-border max-h-56 w-auto"
             />
-          )}
-          {message.text && (
-            <p className="whitespace-pre-wrap leading-snug text-sm font-medium">
-              {message.text}
-            </p>
-          )}
-        </div>
+          </div>
+        )}
+
+        {isEditing ? (
+          <div className="flex flex-col gap-2.5 pt-1">
+            <Textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              className="w-full text-sm bg-background border-border/90 rounded-xl min-h-[60px]"
+              placeholder="Edit what they sent..."
+            />
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+                className="h-7 text-xs rounded-lg gap-1"
+              >
+                <X className="h-3 w-3" /> Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveEdit}
+                className="h-7 text-xs rounded-lg bg-primary text-primary-foreground gap-1"
+              >
+                <Check className="h-3 w-3" /> Save & Resend
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-base sm:text-lg font-medium leading-relaxed text-foreground select-text">
+            “{message.text}”
+          </p>
+        )}
       </div>
     );
   }
 
+  // 2. The 3-Option Reply Deck (Non-Chatbot Studio Layout)
   return (
-    <div className="flex flex-col w-full gap-2.5">
-      {/* Processing State */}
+    <div className="flex flex-col w-full gap-3 pt-1">
+      {/* Processing Skeleton Deck */}
       {message.isProcessing && (
-        <div className="flex flex-col gap-2.5 w-full animate-reveal-fade">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+        <div className="flex flex-col gap-3 w-full animate-reveal-fade">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground px-1">
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span>Writing 3 angles...</span>
+            <span>Calibrating 3 reply angles...</span>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 style={{ animationDelay: `${i * 120}ms` }}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-border/70 bg-card px-4 py-3.5 animate-reveal-up"
+                className="flex flex-col justify-between gap-4 rounded-2xl border border-border/70 bg-card p-4 sm:p-5 animate-reveal-up min-h-[160px]"
               >
-                <div className="flex items-center gap-3 flex-1">
-                  <Skeleton className="h-6 w-16 rounded-lg shrink-0" />
-                  <div className="space-y-1.5 flex-1">
-                    <Skeleton className="h-4 w-4/5" />
-                    <Skeleton className="h-3 w-2/5" />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-5 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-6 rounded-md" />
                 </div>
-                <Skeleton className="h-8 w-16 rounded-xl shrink-0" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                </div>
+                <Skeleton className="h-8 w-full rounded-xl" />
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* 3-Reply Flex Stack with Slow Staggered Entrance */}
+      {/* 3-Card Reply Deck */}
       {hasOptions && !message.isProcessing && (
-        <div className="flex flex-col gap-2 w-full">
-          <div className="flex items-center justify-between px-1 animate-reveal-up">
-            <span className="text-xs text-muted-foreground">
-              {message.explanation || 'Tap any line to copy'}
-            </span>
-            <span className="font-code text-[10px] text-muted-foreground/70">
-              CLICK TO COPY
+        <div className="flex flex-col gap-3 w-full animate-reveal-up">
+          {/* Deck Strategy Header */}
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Wingman Strategy:</span>
+              <span>{message.explanation || 'Pick the angle that matches your play.'}</span>
+            </div>
+            <span className="font-code text-[10px] text-muted-foreground/70 hidden sm:inline">
+              TAP CARD TO COPY
             </span>
           </div>
 
-          <div className="flex flex-col gap-2">
+          {/* 3 Interactive Cards (Chill / Smooth / Bold) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {message.options!.map((option, idx) => {
               const meta = vibeMeta[idx % vibeMeta.length];
               const isCopied = copiedIndex === idx;
@@ -119,56 +235,72 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               return (
                 <div
                   key={idx}
-                  style={{ animationDelay: `${100 + idx * 160}ms` }}
+                  style={{ animationDelay: `${120 + idx * 140}ms` }}
                   onClick={() => handleCopy(option.text, idx)}
                   className={cn(
-                    'group cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-border/75 bg-card/90 px-4 py-3.5 animate-reveal-up smooth-interactive hover:border-primary/60 hover:bg-card hover:-translate-y-0.5 hover:shadow-lg',
+                    'group cursor-pointer relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card/95 p-4 sm:p-5 transition-all duration-300 hover:border-primary/70 hover:-translate-y-1 hover:shadow-xl animate-reveal-up',
                     isCopied && meta.activeRing
                   )}
                 >
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <span className="inline-flex items-center gap-1.5 shrink-0 rounded-lg bg-secondary border border-border/60 px-2.5 py-1 text-xs font-medium text-foreground mt-0.5 smooth-interactive group-hover:border-primary/40">
+                  {/* Card Top: Number + Vibe Badge */}
+                  <div className="flex items-center justify-between pb-3 border-b border-border/40">
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider',
+                        meta.badgeBg
+                      )}
+                    >
                       <span className={cn('h-1.5 w-1.5 rounded-full', meta.dot)} />
                       {option.label || meta.defaultLabel}
                     </span>
-
-                    <div className="flex flex-col gap-1 min-w-0 flex-1">
-                      <p className="text-[15px] font-medium leading-snug text-foreground select-text">
-                        {option.text}
-                      </p>
-                      {option.vibeReason && (
-                        <p className="text-xs text-muted-foreground">
-                          {option.vibeReason}
-                        </p>
-                      )}
-                    </div>
+                    <span className="font-code text-xs text-muted-foreground/60 font-semibold">
+                      {meta.num}
+                    </span>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleCopy(option.text, idx);
-                    }}
-                    className={cn(
-                      'shrink-0 self-end sm:self-center inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium smooth-interactive',
-                      isCopied
-                        ? 'bg-emerald-500 text-white scale-105'
-                        : 'bg-secondary text-muted-foreground group-hover:text-foreground group-hover:bg-accent'
+                  {/* Card Body: Ready-to-send Message Draft */}
+                  <div className="py-4 flex-1">
+                    <p className="text-[15px] sm:text-base font-medium leading-relaxed text-foreground select-text">
+                      {option.text}
+                    </p>
+                  </div>
+
+                  {/* Card Footer: Micro-Reason + Copy Button */}
+                  <div className="pt-3 border-t border-border/40 flex flex-col gap-2.5">
+                    {option.vibeReason && (
+                      <p className="text-[11px] text-muted-foreground line-clamp-1">
+                        {option.vibeReason}
+                      </p>
                     )}
-                  >
-                    {isCopied ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+
+                    <Button
+                      type="button"
+                      variant={isCopied ? 'default' : 'secondary'}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopy(option.text, idx);
+                      }}
+                      className={cn(
+                        'h-8 w-full rounded-xl text-xs font-semibold gap-1.5 smooth-interactive',
+                        isCopied
+                          ? 'bg-emerald-600 hover:bg-emerald-600 text-white'
+                          : 'bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground'
+                      )}
+                    >
+                      {isCopied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Copied to Clipboard</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>Copy This Line</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               );
             })}
@@ -176,9 +308,9 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         </div>
       )}
 
-      {/* Fallback single message */}
+      {/* Legacy / Single Fallback */}
       {!hasOptions && !message.isProcessing && (
-        <div className="max-w-lg rounded-2xl rounded-tl-sm p-3.5 bg-card border border-border animate-reveal-up">
+        <div className="rounded-2xl p-4 bg-card border border-border animate-reveal-up">
           <p className="whitespace-pre-wrap text-sm leading-snug">{message.text}</p>
         </div>
       )}
