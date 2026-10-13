@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Check } from 'lucide-react';
 import { RizzLogo } from '@/components/rizz-logo';
 import { authClient } from '@/lib/auth/client';
+import { getClientDeviceFingerprint } from '@/lib/fingerprint-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,6 +51,10 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    getClientDeviceFingerprint().catch(() => {});
+  }, []);
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -61,6 +66,7 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
+      await getClientDeviceFingerprint().catch(() => {});
       const displayName = email.split('@')[0] || 'Rizzler';
       const { error } = await authClient.signUp.email({
         email,
@@ -98,6 +104,7 @@ export default function SignupPage() {
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
+      await getClientDeviceFingerprint().catch(() => {});
       const { error } = await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/',

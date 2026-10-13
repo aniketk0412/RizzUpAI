@@ -6,6 +6,7 @@ import {
   primaryKey,
   jsonb,
   bigint,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import type { AdapterAccountType } from 'next-auth/adapters';
 import type { ReplyOption, Relation, Tone, Sender, SubtextAnalysis } from '@/types';
@@ -21,6 +22,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash'),
   credits: integer('credits').notNull().default(15),
   creditResetTimestamp: bigint('credit_reset_timestamp', { mode: 'number' }),
+  isPaid: boolean('is_paid').notNull().default(false),
+  deviceId: text('device_id'),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
@@ -102,4 +105,25 @@ export const chatMessages = pgTable('chat_messages', {
   createdAt: bigint('created_at', { mode: 'number' })
     .notNull()
     .$defaultFn(() => Date.now()),
+});
+
+export const deviceFingerprints = pgTable('device_fingerprints', {
+  id: text('id').primaryKey(),
+  fingerprintHash: text('fingerprint_hash').notNull().unique(),
+  firstUserId: text('first_user_id'),
+  freeCreditsClaimed: boolean('free_credits_claimed').notNull().default(true),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  claimedAt: bigint('claimed_at', { mode: 'number' })
+    .notNull()
+    .$defaultFn(() => Date.now()),
+  lastSeenAt: bigint('last_seen_at', { mode: 'number' })
+    .notNull()
+    .$defaultFn(() => Date.now()),
+});
+
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull().default(1),
+  resetAt: bigint('reset_at', { mode: 'number' }).notNull(),
 });

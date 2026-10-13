@@ -32,9 +32,10 @@ const creditPlans = [
 
 export default function CreditDialog({ open, onOpenChange, credits, resetTimestamp }: CreditDialogProps) {
   const [countdown, setCountdown] = useState('00:00:00');
-  const { user, updateLocalCredits } = useAuth();
+  const { user, userProfile, updateLocalCredits } = useAuth();
   const { toast } = useToast();
   const [isResetting, setIsResetting] = useState(false);
+  const isPaidUser = Boolean(userProfile?.isPaid);
 
   useEffect(() => {
     if (!user || credits > 0 || !resetTimestamp) {
@@ -90,7 +91,18 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[825px]">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">Manage Your Credits</DialogTitle>
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle className="font-headline text-2xl">Manage Your Credits</DialogTitle>
+            {isPaidUser ? (
+              <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30">
+                PRO MEMBER · UNLIMITED SPEED
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-xs font-mono text-muted-foreground">
+                FREE TIER · 5 REQ/MIN
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
             You have {credits} credits remaining. Need more? Choose a plan below.
           </DialogDescription>
@@ -102,8 +114,8 @@ export default function CreditDialog({ open, onOpenChange, credits, resetTimesta
             </CardHeader>
             <CardContent>
               <p className="text-5xl font-bold font-mono text-accent-foreground">{countdown}</p>
-              <p className="text-muted-foreground mt-2">
-                When you run out of credits, you can wait for a free refill.
+              <p className="text-muted-foreground mt-2 text-xs">
+                Free tier accounts are capped at 5 replies/min to prevent bot abuse. Paid plans unlock priority speed with zero rate limits.
               </p>
             </CardContent>
           </Card>

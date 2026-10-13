@@ -1,15 +1,36 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
+import { cookies, headers } from 'next/headers';
 import { db, isDatabaseConfigured } from '@/db';
-import { users } from '@/db/schema';
+import { users, deviceFingerprints } from '@/db/schema';
 import { auth } from '@/auth';
 
-export async function getUserProfile() {
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+  credits: number;
+  creditResetTimestamp: number | null;
+  isPaid: boolean;
+  deviceClaimedBefore?: boolean;
+}
+
+export async function getUserProfile(clientFingerprint?: {
+  fingerprintHash?: string;
+  deviceId?: string;
+}): Promise<UserProfileResponse | null> {
   const session = await auth();
   if (!session?.user?.id || !isDatabaseConfigured()) {
     return null;
   }
+
+  const cookieStore = await cookies();
+  const headerStore = await headers();
+  const cookieDeviceId = cookieStore.get('rizzup_did')?.value;
+  const effectiveFingerprint = clientFingerprint?.fingerprintHash;
+  const effectiveDeviceId = clientFingerprint?.deviceId || cookieDeviceId;
 
   let [userRecord] = await db
     .select({
@@ -19,15 +40,28 @@ export async function getUserProfile() {
       image: users.image,
       credits: users.credits,
       creditResetTimestamp: users.creditResetTimestamp,
+      isPaid: users.isPaid,
+      deviceId: users.deviceId,
     })
     .from(users)
     .where(eq(users.id, session.user.id))
     .limit(1);
 
+  let deviceClaimedBefore = false;
+
   // Auto-provision user in our credits table on first Google / Email sign-in
   if (!userRecord && session.user.email) {
     const [existingByEmail] = await db
-      .select()
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        image: users.image,
+        credits: users.credits,
+        creditResetTimestamp: users.creditResetTimestamp,
+        isPaid: users.isPaid,
+        deviceId: users.deviceId,
+      })
       .from(users)
       .where(eq(users.email, session.user.email.toLowerCase()))
       .limit(1);
@@ -35,6 +69,48 @@ export async function getUserProfile() {
     if (existingByEmail) {
       userRecord = existingByEmail;
     } else {
+      let initialCredits = 15;
+
+      // STRICT DEVICE FINGERPRINTING:
+      // Verify if this physical device / browser has already claimed free credits
+      if (effectiveFingerprint || effectiveDeviceId) {
+        const conditions = [];
+        if (effectiveFingerprint) {
+          conditions.push(eq(deviceFingerprints.fingerprintHash, effectiveFingerprint));
+        }
+        if (effectiveDeviceId) {
+          conditions.push(eq(deviceFingerprints.id, effectiveDeviceId));
+        }
+
+        const [existingDevice] = await db
+          .select()
+          .from(deviceFingerprints)
+          .where(or(...conditions))
+          .limit(1);
+
+        if (existingDevice && existingDevice.freeCreditsClaimed) {
+          // Device has already claimed free credits on a previous account!
+          initialCredits = 0;
+          deviceClaimedBefore = true;
+        } else {
+          // Newly seen device: register in device_fingerprints
+          const primaryId = effectiveDeviceId || effectiveFingerprint || crypto.randomUUID();
+          await db
+            .insert(deviceFingerprints)
+            .values({
+              id: primaryId,
+              fingerprintHash: effectiveFingerprint || primaryId,
+              firstUserId: session.user.id,
+              freeCreditsClaimed: true,
+              ipAddress: headerStore.get('x-forwarded-for') || null,
+              userAgent: headerStore.get('user-agent') || null,
+              claimedAt: Date.now(),
+              lastSeenAt: Date.now(),
+            })
+            .onConflictDoNothing();
+        }
+      }
+
       const [inserted] = await db
         .insert(users)
         .values({
@@ -42,8 +118,10 @@ export async function getUserProfile() {
           email: session.user.email.toLowerCase(),
           name: session.user.name || session.user.email.split('@')[0],
           image: session.user.image || null,
-          credits: 15,
+          credits: initialCredits,
           creditResetTimestamp: null,
+          isPaid: false,
+          deviceId: effectiveDeviceId || null,
         })
         .returning({
           id: users.id,
@@ -52,6 +130,8 @@ export async function getUserProfile() {
           image: users.image,
           credits: users.credits,
           creditResetTimestamp: users.creditResetTimestamp,
+          isPaid: users.isPaid,
+          deviceId: users.deviceId,
         });
       userRecord = inserted;
     }
@@ -88,8 +168,10 @@ export async function getUserProfile() {
 
   return {
     ...userRecord,
+    isPaid: Boolean(userRecord.isPaid),
     credits,
     creditResetTimestamp,
+    deviceClaimedBefore,
   };
 }
 

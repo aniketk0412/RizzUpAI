@@ -11,6 +11,7 @@ import React, {
 import { useRouter } from 'next/navigation';
 import { authClient } from '@/lib/auth/client';
 import { getUserProfile } from '@/actions/user-actions';
+import { getClientDeviceFingerprint } from '@/lib/fingerprint-client';
 
 export interface AuthUser {
   uid: string;
@@ -23,6 +24,8 @@ export interface AuthUser {
 export interface UserProfile {
   credits: number;
   creditResetTimestamp: number | null;
+  isPaid?: boolean;
+  deviceClaimedBefore?: boolean;
 }
 
 interface AuthContextType {
@@ -60,16 +63,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         image: session.user.image ?? null,
       });
 
-      const profile = await getUserProfile();
+      // Obtain client hardware & persistent device fingerprint
+      let fingerprint: { fingerprintHash: string; deviceId: string } | undefined;
+      try {
+        fingerprint = await getClientDeviceFingerprint();
+      } catch {
+        // Fallback to cookie / server detection
+      }
+
+      const profile = await getUserProfile(fingerprint);
       if (profile) {
         setUserProfile({
           credits: profile.credits,
           creditResetTimestamp: profile.creditResetTimestamp,
+          isPaid: profile.isPaid,
+          deviceClaimedBefore: profile.deviceClaimedBefore,
         });
       } else {
         setUserProfile({
           credits: 15,
           creditResetTimestamp: null,
+          isPaid: false,
         });
       }
     } catch (error) {

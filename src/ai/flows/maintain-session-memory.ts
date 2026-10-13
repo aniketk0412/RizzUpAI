@@ -5,6 +5,7 @@ import { eq, sql } from 'drizzle-orm';
 import { generateStructuredJSON } from '@/ai/gemini';
 import { db, isDatabaseConfigured } from '@/db';
 import { users } from '@/db/schema';
+import { checkFreeTierRateLimit } from '@/lib/rate-limit';
 import type { ReplyOption, SubtextAnalysis } from '@/types';
 
 export interface MaintainSessionMemoryInput {
@@ -34,7 +35,7 @@ export async function maintainSessionMemory(
     // 1. Verify credits BEFORE calling AI (do not deduct until AI succeeds)
     if (isDatabaseConfigured() && input.userId) {
       const [userRecord] = await db
-        .select({ credits: users.credits })
+        .select({ credits: users.credits, isPaid: users.isPaid })
         .from(users)
         .where(eq(users.id, input.userId))
         .limit(1);
@@ -45,6 +46,23 @@ export async function maintainSessionMemory(
           explanation: '',
           options: [],
           error: 'Insufficient credits. Wait for the daily refill or top up.',
+        };
+      }
+
+      // 2. Strict Rate Limiting for Free Tier users (Paid users automatically bypass)
+      const rateCheck = await checkFreeTierRateLimit({
+        userId: input.userId,
+        isPaidUser: Boolean(userRecord.isPaid),
+        maxRequests: 5,
+        windowSeconds: 60,
+      });
+
+      if (!rateCheck.allowed) {
+        return {
+          response: '',
+          explanation: '',
+          options: [],
+          error: rateCheck.message || 'Free tier rate limit reached. Please wait a moment.',
         };
       }
     }
